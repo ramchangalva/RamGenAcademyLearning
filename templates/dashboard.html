@@ -1,0 +1,545 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Center of Intelligence | TradePulse AI{% endblock %}
+
+{% block page_title %}Dashboard - Center of Intelligence{% endblock %}
+
+{% block extra_css %}
+<style>
+    /* Improved color contrast and readability */
+    .dashboard-kpi-value {
+        font-weight: 700;
+        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+    }
+    
+    .dashboard-positive {
+        color: var(--success) !important;
+        font-weight: 600;
+    }
+    
+    .dashboard-negative {
+        color: var(--danger) !important;
+        font-weight: 600;
+    }
+    
+    .dashboard-neutral {
+        color: var(--text-secondary) !important;
+        font-weight: 500;
+    }
+    
+    /* Better contrast for badges */
+    .badge {
+        text-shadow: none;
+        letter-spacing: 0.5px;
+    }
+    
+    /* Improved table readability */
+    .table td {
+        vertical-align: middle;
+    }
+    
+    .table th {
+        font-weight: 600;
+        color: var(--text-light);
+        border-bottom: 2px solid var(--border);
+    }
+    
+    /* Icon spacing */
+    .dashboard-icon {
+        margin-right: 0.5rem;
+        opacity: 0.9;
+    }
+</style>
+{% endblock %}
+
+{% block main_content %}
+<div class="container-fluid py-4">
+    <!-- Page Header -->
+    <div class="mb-4">
+        <h1 style="font-size: 2rem; font-weight: 700; color: var(--text-light); margin-bottom: 0.5rem;">
+            <i class="fas fa-tachometer-alt" style="color: var(--primary);"></i> Dashboard
+        </h1>
+        <p style="color: var(--text-secondary); font-size: 1rem;">
+            Center of Intelligence - Real-time KPIs, News, and AI-Powered Insights
+        </p>
+    </div>
+
+    {% if error %}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i> Error loading dashboard: {{ error }}
+    </div>
+    {% endif %}
+
+    <!-- Market Overview -->
+    {% if market_overview and market_overview.indices %}
+    <div class="card mb-4">
+        <div class="card-header" style="background: linear-gradient(135deg, #6D5BFF 0%, #C05CFF 100%); color: white; border: none;">
+            <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-globe"></i> Market Overview</h4>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                {% for index in market_overview.indices %}
+                <div class="col-md-3">
+                    <div style="background: var(--bg-secondary); border-radius: var(--radius); padding: 1.5rem; text-align: center; border-left: 4px solid {% if index.change_pct >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.5rem;">{{ index.name }}</div>
+                        <div style="font-size: 1.75rem; font-weight: 700; color: var(--text-light); margin-bottom: 0.25rem;">
+                            {{ "%.2f"|format(index.value) }}
+                        </div>
+                        <div style="font-size: 0.875rem; font-weight: 600; color: {% if index.change_pct >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                            <i class="fas fa-arrow-{% if index.change_pct >= 0 %}up{% else %}down{% endif %}" style="margin-right: 0.25rem;"></i>
+                            <span style="font-weight: 700;">{{ "%.2f"|format(index.change) }}</span>
+                            <span style="opacity: 0.9;">({{ "%.2f"|format(index.change_pct) }}%)</span>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Summary KPIs -->
+    {% if kpis_data and kpis_data.summary %}
+    <div class="row g-3 mb-4">
+        <div class="col-md-3">
+            {% set avg_change = kpis_data.summary.avg_price_change %}
+            {% set is_positive = avg_change >= 0 %}
+            <div class="card" style="background: linear-gradient(135deg, {% if is_positive %}rgba(16, 185, 129, 0.15){% else %}rgba(239, 68, 68, 0.15){% endif %} 0%, {% if is_positive %}rgba(5, 150, 105, 0.15){% else %}rgba(220, 38, 38, 0.15){% endif %} 100%); border-left: 4px solid {% if is_positive %}var(--success){% else %}var(--danger){% endif %};">
+                <div class="card-body text-center">
+                    <div style="font-size: 2rem; color: {% if is_positive %}var(--success){% else %}var(--danger){% endif %}; margin-bottom: 0.5rem;">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem; font-weight: 500;">Avg Price Change</div>
+                    <div style="font-size: 1.75rem; font-weight: 700; color: {% if is_positive %}var(--success){% else %}var(--danger){% endif %};">
+                        <i class="fas fa-arrow-{% if is_positive %}up{% else %}down{% endif %}" style="font-size: 1.25rem; margin-right: 0.25rem;"></i>
+                        {{ "%.2f"|format(avg_change) }}%
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card" style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%); border-left: 4px solid var(--success);">
+                <div class="card-body text-center">
+                    <div style="font-size: 2rem; color: var(--success); margin-bottom: 0.5rem;">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem; font-weight: 500;">Bullish Signals</div>
+                    <div style="font-size: 1.75rem; font-weight: 700; color: var(--success);">
+                        <i class="fas fa-arrow-up" style="font-size: 1.25rem; margin-right: 0.25rem;"></i>
+                        {{ kpis_data.summary.bullish_count }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card" style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%); border-left: 4px solid var(--danger);">
+                <div class="card-body text-center">
+                    <div style="font-size: 2rem; color: var(--danger); margin-bottom: 0.5rem;">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem; font-weight: 500;">Bearish Signals</div>
+                    <div style="font-size: 1.75rem; font-weight: 700; color: var(--danger);">
+                        <i class="fas fa-arrow-down" style="font-size: 1.25rem; margin-right: 0.25rem;"></i>
+                        {{ kpis_data.summary.bearish_count }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.15) 0%, rgba(37, 99, 235, 0.15) 100%); border-left: 4px solid var(--info);">
+                <div class="card-body text-center">
+                    <div style="font-size: 2rem; color: var(--info); margin-bottom: 0.5rem;">
+                        <i class="fas fa-chart-bar"></i>
+                    </div>
+                    <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem; font-weight: 500;">Total Volume</div>
+                    <div style="font-size: 1.75rem; font-weight: 700; color: var(--info);">
+                        <i class="fas fa-chart-bar" style="font-size: 1.25rem; margin-right: 0.25rem;"></i>
+                        {{ "%.0f"|format(kpis_data.summary.total_volume / 1000000) }}M
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+
+    <div class="row g-4">
+        <!-- Left Column: KPIs Table -->
+        <div class="col-lg-8">
+            <!-- Watchlist KPIs Table -->
+            {% if kpis_data and kpis_data.kpis %}
+            <div class="card mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--primary) 0%, #C05CFF 100%); color: white; border: none;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-table"></i> Watchlist KPIs</h4>
+                        <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border: none;" onclick="refreshKPIs()">
+                            <i class="fas fa-sync-alt"></i> Refresh
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-dark table-hover" style="margin: 0;">
+                            <thead>
+                                <tr>
+                                    <th>Symbol</th>
+                                    <th>Price</th>
+                                    <th>Change</th>
+                                    <th>RSI</th>
+                                    <th>AI Signal</th>
+                                    <th>Support</th>
+                                    <th>Resistance</th>
+                                    <th>Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for kpi in kpis_data.kpis %}
+                                <tr style="cursor: pointer;" onclick="analyzeStock('{{ kpi.symbol }}', 'stock')">
+                                    <td><strong>{{ kpi.symbol }}</strong><br><small style="color: var(--text-muted);">{{ kpi.name[:30] }}{% if kpi.name|length > 30 %}...{% endif %}</small></td>
+                                    <td>${{ "%.2f"|format(kpi.current_price) }}</td>
+                                    <td>
+                                        <span style="color: {% if kpi.price_change_pct >= 0 %}var(--success){% else %}var(--danger){% endif %}; font-weight: 600;">
+                                            <i class="fas fa-arrow-{% if kpi.price_change_pct >= 0 %}up{% else %}down{% endif %}" style="margin-right: 0.25rem;"></i>
+                                            <strong>{{ "%.2f"|format(kpi.price_change_pct) }}%</strong>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% set rsi_val = kpi.rsi %}
+                                        {% set rsi_color = 'var(--danger)' if rsi_val > 70 else ('var(--success)' if rsi_val < 30 else 'var(--warning)') %}
+                                        {% set rsi_label = 'Overbought' if rsi_val > 70 else ('Oversold' if rsi_val < 30 else 'Neutral') %}
+                                        <span style="color: {{ rsi_color }}; font-weight: 600;" title="RSI: {{ rsi_label }}">
+                                            <i class="fas fa-{% if rsi_val > 70 %}exclamation-triangle{% elif rsi_val < 30 %}check-circle{% else %}minus-circle{% endif %}" style="margin-right: 0.25rem; font-size: 0.875rem;"></i>
+                                            <strong>{{ "%.1f"|format(rsi_val) }}</strong>
+                                        </span>
+                                    </td>
+                                    <td>
+                                        {% set rec = kpi.ai_recommendation %}
+                                        {% set rec_color = 'var(--success)' if rec == 'BUY' else ('var(--danger)' if rec == 'SELL' else 'var(--warning)') %}
+                                        {% set rec_icon = 'check-circle' if rec == 'BUY' else ('times-circle' if rec == 'SELL' else 'pause-circle') %}
+                                        <span class="badge" style="background: {{ rec_color }}; color: white; font-weight: 600; padding: 0.5rem 0.75rem; font-size: 0.875rem;">
+                                            <i class="fas fa-{{ rec_icon }}" style="margin-right: 0.25rem;"></i>
+                                            {{ rec }}
+                                        </span>
+                                    </td>
+                                    <td>${{ "%.2f"|format(kpi.support) }}</td>
+                                    <td>${{ "%.2f"|format(kpi.resistance) }}</td>
+                                    <td>
+                                        <button class="btn btn-sm btn-primary" onclick="event.stopPropagation(); analyzeStock('{{ kpi.symbol }}', 'stock')">
+                                            <i class="fas fa-chart-line"></i> Analyze
+                                        </button>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% else %}
+            <div class="card mb-4">
+                <div class="card-body text-center py-5">
+                    <i class="fas fa-star" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                    <h5 style="color: var(--text-secondary);">No stocks in watchlist</h5>
+                    <p style="color: var(--text-muted);">Add stocks to your watchlist to see KPIs here</p>
+                </div>
+            </div>
+            {% endif %}
+
+            <!-- Top Movers -->
+            {% if top_movers %}
+            <div class="row g-3 mb-4">
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; border: none;">
+                            <h5 style="margin: 0; font-weight: 700;"><i class="fas fa-arrow-up"></i> Top Gainers</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if top_movers.gainers %}
+                            {% for mover in top_movers.gainers[:5] %}
+                            <div class="d-flex justify-content-between align-items-center mb-3" style="padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);">
+                                <div>
+                                    <strong style="color: var(--text-light);">{{ mover.symbol }}</strong>
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary);">{{ mover.name[:25] }}{% if mover.name|length > 25 %}...{% endif %}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: var(--success);">
+                                        <i class="fas fa-arrow-up" style="margin-right: 0.25rem;"></i>
+                                        +{{ "%.2f"|format(mover.price_change_pct) }}%
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary); font-weight: 500;">${{ "%.2f"|format(mover.current_price) }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <p style="color: var(--text-muted); text-align: center;">No gainers</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div class="card">
+                        <div class="card-header" style="background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); color: white; border: none;">
+                            <h5 style="margin: 0; font-weight: 700;"><i class="fas fa-arrow-down"></i> Top Losers</h5>
+                        </div>
+                        <div class="card-body">
+                            {% if top_movers.losers %}
+                            {% for mover in top_movers.losers[:5] %}
+                            <div class="d-flex justify-content-between align-items-center mb-3" style="padding-bottom: 0.75rem; border-bottom: 1px solid var(--border);">
+                                <div>
+                                    <strong style="color: var(--text-light);">{{ mover.symbol }}</strong>
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary);">{{ mover.name[:25] }}{% if mover.name|length > 25 %}...{% endif %}</div>
+                                </div>
+                                <div style="text-align: right;">
+                                    <div style="font-size: 1.25rem; font-weight: 700; color: var(--danger);">
+                                        <i class="fas fa-arrow-down" style="margin-right: 0.25rem;"></i>
+                                        {{ "%.2f"|format(mover.price_change_pct) }}%
+                                    </div>
+                                    <div style="font-size: 0.875rem; color: var(--text-secondary); font-weight: 500;">${{ "%.2f"|format(mover.current_price) }}</div>
+                                </div>
+                            </div>
+                            {% endfor %}
+                            {% else %}
+                            <p style="color: var(--text-muted); text-align: center;">No losers</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+
+        <!-- Right Column: News & AI Assistant -->
+        <div class="col-lg-4">
+            <!-- Real-time News Feed -->
+            <div class="card mb-4">
+                <div class="card-header" style="background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%); color: white; border: none;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h5 style="margin: 0; font-weight: 700;"><i class="fas fa-newspaper"></i> Real-time News</h5>
+                        <button class="btn btn-sm" style="background: rgba(255,255,255,0.2); color: white; border: none;" onclick="refreshNews()">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+                <div class="card-body" style="max-height: 400px; overflow-y: auto;" id="news-feed">
+                    {% if realtime_news %}
+                    {% for news in realtime_news[:10] %}
+                    <div style="padding: 1rem; margin-bottom: 0.75rem; background: var(--bg-secondary); border-radius: var(--radius); border-left: 3px solid var(--info);">
+                        <div style="display: flex; justify-content: space-between; align-items: start; margin-bottom: 0.5rem;">
+                            <span class="badge" style="background: var(--primary);">{{ news.symbol }}</span>
+                            <small style="color: var(--text-muted);">{{ news.date }}</small>
+                        </div>
+                        <h6 style="color: var(--text-light); font-size: 0.875rem; margin-bottom: 0.5rem; line-height: 1.4;">
+                            {{ news.title }}
+                        </h6>
+                        <div style="font-size: 0.75rem; color: var(--text-muted);">
+                            <i class="fas fa-newspaper"></i> {{ news.publisher }}
+                            {% if news.link %}
+                            <a href="{{ news.link }}" target="_blank" style="color: var(--info); margin-left: 0.5rem;">
+                                <i class="fas fa-external-link-alt"></i>
+                            </a>
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endfor %}
+                    {% else %}
+                    <p style="color: var(--text-muted); text-align: center;">No recent news</p>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- AI Stock Assistant -->
+            <div class="card">
+                <div class="card-header" style="background: linear-gradient(135deg, #8B5CF6 0%, #7C3AED 100%); color: white; border: none;">
+                    <h5 style="margin: 0; font-weight: 700;"><i class="fas fa-robot"></i> AI Stock Assistant</h5>
+                    <small style="opacity: 0.9;">Ask questions about your stocks</small>
+                </div>
+                <div class="card-body">
+                    <!-- Stock Selector -->
+                    <div class="mb-3">
+                        <label class="form-label">Select Stock (optional)</label>
+                        <select class="form-select" id="ai-stock-selector">
+                            <option value="">General Questions</option>
+                            {% if watchlist %}
+                            {% for stock in watchlist %}
+                            <option value="{{ stock }}">{{ stock }}</option>
+                            {% endfor %}
+                            {% endif %}
+                        </select>
+                    </div>
+
+                    <!-- Chat Messages -->
+                    <div id="ai-chat-messages" style="max-height: 300px; overflow-y: auto; margin-bottom: 1rem; padding: 1rem; background: var(--bg-secondary); border-radius: var(--radius); min-height: 200px;">
+                        <div class="text-center text-muted" style="padding: 2rem;">
+                            <i class="fas fa-comments" style="font-size: 2rem; margin-bottom: 0.5rem; opacity: 0.5;"></i>
+                            <p style="margin: 0;">Start a conversation with AI</p>
+                        </div>
+                    </div>
+
+                    <!-- Chat Input -->
+                    <div class="input-group">
+                        <input type="text" class="form-control" id="ai-chat-input" placeholder="Ask about stocks..." onkeypress="if(event.key === 'Enter') sendAIMessage()">
+                        <button class="btn btn-primary" onclick="sendAIMessage()">
+                            <i class="fas fa-paper-plane"></i>
+                        </button>
+                    </div>
+
+                    <!-- Provider Selection (if needed) -->
+                    <div class="mt-3" id="ai-provider-selection" style="display: none;">
+                        <select class="form-select form-select-sm" id="ai-provider">
+                            <option value="openai">OpenAI</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let chatHistory = [];
+let chatbotProviders = [];
+
+// Load chatbot providers on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadChatbotProviders();
+});
+
+async function loadChatbotProviders() {
+    try {
+        const response = await fetch('/api/chatbot/providers');
+        const data = await response.json();
+        chatbotProviders = data.providers || [];
+        
+        // Update provider selector if needed
+        const providerSelect = document.getElementById('ai-provider');
+        if (providerSelect && chatbotProviders.length > 0) {
+            providerSelect.innerHTML = '';
+            chatbotProviders.forEach(provider => {
+                if (provider.available && provider.models && provider.models.length > 0) {
+                    const option = document.createElement('option');
+                    option.value = provider.name;
+                    option.textContent = provider.name;
+                    providerSelect.appendChild(option);
+                }
+            });
+        }
+    } catch (error) {
+        console.error('Error loading chatbot providers:', error);
+    }
+}
+
+async function sendAIMessage() {
+    const input = document.getElementById('ai-chat-input');
+    const stockSelector = document.getElementById('ai-stock-selector');
+    const providerSelect = document.getElementById('ai-provider');
+    
+    if (!input) return;
+    
+    const message = input.value.trim();
+    if (!message) return;
+    
+    const selectedStock = stockSelector ? stockSelector.value : '';
+    const provider = providerSelect ? providerSelect.value : 'openai';
+    
+    // Add user message to chat
+    addChatMessage('user', message);
+    input.value = '';
+    
+    // Add to history
+    chatHistory.push({ role: 'user', content: message });
+    
+    // Show loading
+    const loadingId = addChatMessage('assistant', 'Thinking...', true);
+    
+    try {
+        const response = await fetch('/api/dashboard/ai-chat', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                messages: chatHistory,
+                symbol: selectedStock || null,
+                asset_type: 'stock',
+                provider: provider,
+                model: null  // Let backend choose default model
+            })
+        });
+        
+        const data = await response.json();
+        removeChatMessage(loadingId);
+        
+        if (data.success) {
+            addChatMessage('assistant', data.content);
+            chatHistory.push({ role: 'assistant', content: data.content });
+        } else {
+            addChatMessage('assistant', `Error: ${data.error || 'Unknown error'}`, false, true);
+        }
+    } catch (error) {
+        removeChatMessage(loadingId);
+        addChatMessage('assistant', `Error: ${error.message}`, false, true);
+    }
+}
+
+function addChatMessage(role, content, isLoading = false, isError = false) {
+    const messagesDiv = document.getElementById('ai-chat-messages');
+    if (!messagesDiv) return null;
+    
+    // Remove placeholder if exists
+    const placeholder = messagesDiv.querySelector('.text-center.text-muted');
+    if (placeholder) placeholder.remove();
+    
+    const messageId = 'msg-' + Date.now();
+    const messageDiv = document.createElement('div');
+    messageDiv.id = messageId;
+    messageDiv.style.cssText = `
+        margin-bottom: 1rem;
+        padding: 0.75rem;
+        background: ${role === 'user' ? 'var(--primary)' : 'var(--bg-card)'};
+        color: ${role === 'user' ? 'white' : 'var(--text-light)'};
+        border-radius: var(--radius);
+        ${role === 'user' ? 'margin-left: 2rem;' : 'margin-right: 2rem;'}
+        ${isError ? 'border-left: 3px solid var(--danger);' : ''}
+    `;
+    
+    if (isLoading) {
+        messageDiv.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ' + content;
+    } else {
+        messageDiv.innerHTML = `<strong>${role === 'user' ? 'You' : 'AI'}:</strong> ${content}`;
+    }
+    
+    messagesDiv.appendChild(messageDiv);
+    messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    
+    return messageId;
+}
+
+function removeChatMessage(messageId) {
+    const message = document.getElementById(messageId);
+    if (message) message.remove();
+}
+
+async function refreshKPIs() {
+    try {
+        const response = await fetch('/api/dashboard/kpis');
+        const data = await response.json();
+        // Reload page to show updated data
+        location.reload();
+    } catch (error) {
+        alert('Error refreshing KPIs: ' + error.message);
+    }
+}
+
+async function refreshNews() {
+    try {
+        const response = await fetch('/api/dashboard/news');
+        const data = await response.json();
+        // Reload page to show updated news
+        location.reload();
+    } catch (error) {
+        alert('Error refreshing news: ' + error.message);
+    }
+}
+
+function analyzeStock(symbol, assetType) {
+    window.location.href = `/analysis?symbol=${encodeURIComponent(symbol)}&asset_type=${assetType}&period=1y&interval=1d`;
+}
+</script>
+{% endblock %}

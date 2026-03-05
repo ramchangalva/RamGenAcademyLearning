@@ -1,0 +1,1354 @@
+{% extends "base.html" %}
+
+{% block title %}Stock Analysis - TradePulse AI{% endblock %}
+
+{% block page_title %}Stock Analysis{% endblock %}
+
+{% block main_content %}
+<!-- Financial Disclaimer -->
+<div class="alert alert-warning mb-4" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); border-left: 4px solid #f59e0b;">
+    <strong><i class="fas fa-exclamation-triangle"></i> Important Disclaimer:</strong>
+    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+        This application provides analysis and recommendations for informational purposes only. 
+        <strong>This is NOT financial advice.</strong> All trading and investment decisions carry risk. 
+        Past performance does not guarantee future results. Always conduct your own research and 
+        consult with a qualified financial advisor before making investment decisions. 
+        The authors and operators of this application are not responsible for any financial losses.
+    </p>
+</div>
+
+<!-- Analysis Banner -->
+<div class="page-banner mb-4">
+    <div class="banner-content">
+        <h1 class="banner-title">
+            <i class="fas fa-chart-bar"></i> Asset Analysis
+        </h1>
+        <p class="banner-subtitle">Get comprehensive AI-powered analysis for stocks, crypto, commodities, and ETFs</p>
+    </div>
+</div>
+
+<!-- Search Form -->
+<div class="card" style="background: var(--bg-card); border: 1px solid var(--border);">
+    <div class="card-body">
+        <form method="POST" action="/analysis" id="analyze-form" onsubmit="showLoading()">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-2">
+                    <label for="asset_type" class="form-label" style="color: var(--text-secondary);">
+                        <i class="fas fa-layer-group"></i> Asset Type
+                    </label>
+                    <select class="form-select form-select-lg" id="asset_type" name="asset_type" style="background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border);">
+                        <option value="stock" {% if asset_type == "stock" or not asset_type %}selected{% endif %}>Stock</option>
+                        <option value="crypto" {% if asset_type == "crypto" %}selected{% endif %}>Crypto</option>
+                        <option value="commodity" {% if asset_type == "commodity" %}selected{% endif %}>Commodity</option>
+                        <option value="etf" {% if asset_type == "etf" %}selected{% endif %}>ETF</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="symbol" class="form-label" style="color: var(--text-secondary);">
+                        <i class="fas fa-tag"></i> Stock Symbol
+                    </label>
+                    <input type="text" class="form-control form-control-lg" id="symbol" name="symbol" 
+                           value="{{ symbol or '' }}" placeholder="e.g., AAPL, TSLA, MSFT" 
+                           required autofocus style="background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border);">
+                </div>
+                <div class="col-md-3">
+                    <label for="period" class="form-label" style="color: var(--text-secondary);">
+                        <i class="fas fa-calendar-alt"></i> Time Period
+                    </label>
+                    <select class="form-select form-select-lg" id="period" name="period" style="background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border);">
+                        <option value="1mo" {% if period == "1mo" %}selected{% endif %}>1 Month</option>
+                        <option value="3mo" {% if period == "3mo" %}selected{% endif %}>3 Months</option>
+                        <option value="6mo" {% if period == "6mo" %}selected{% endif %}>6 Months</option>
+                        <option value="1y" {% if period == "1y" or not period %}selected{% endif %}>1 Year</option>
+                        <option value="2y" {% if period == "2y" %}selected{% endif %}>2 Years</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label for="interval" class="form-label" style="color: var(--text-secondary);">
+                        <i class="fas fa-clock"></i> Time Interval
+                    </label>
+                    <select class="form-select form-select-lg" id="interval" name="interval" style="background: var(--bg-secondary); color: var(--text-primary); border-color: var(--border);">
+                        <option value="1m" {% if interval == "1m" %}selected{% endif %}>1 Minute</option>
+                        <option value="5m" {% if interval == "5m" %}selected{% endif %}>5 Minutes</option>
+                        <option value="15m" {% if interval == "15m" %}selected{% endif %}>15 Minutes</option>
+                        <option value="1h" {% if interval == "1h" %}selected{% endif %}>1 Hour</option>
+                        <option value="1d" {% if interval == "1d" or not interval %}selected{% endif %}>1 Day</option>
+                        <option value="1wk" {% if interval == "1wk" %}selected{% endif %}>1 Week</option>
+                        <option value="1mo" {% if interval == "1mo" %}selected{% endif %}>1 Month</option>
+                    </select>
+                </div>
+                <div class="col-md-1">
+                    <button type="submit" class="btn btn-primary btn-lg w-100" id="analyze-btn" style="background: var(--primary-gradient); border: none;">
+                        <i class="fas fa-chart-line"></i> <span id="btn-text">Analyze</span>
+                    </button>
+                </div>
+            </div>
+        </form>
+        <div id="loading-indicator" style="display: none; text-align: center; padding: 2rem;">
+            <div class="spinner-border text-primary" role="status"></div>
+            <p style="color: var(--text-secondary); margin-top: 1rem;">Analyzing stock data...</p>
+        </div>
+    </div>
+</div>
+
+
+{% if error %}
+<div class="alert alert-danger">
+    <i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> {{ error }}
+</div>
+{% endif %}
+
+{% if has_analysis %}
+<!-- EMA Alerts -->
+{% if ema_alerts %}
+<div class="card mb-4" id="ema-alerts">
+    <div class="card-header" style="background: linear-gradient(135deg, #6D5BFF, #C05CFF, #FF5C93); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-bell"></i> EMA 20/50/200 Alert System</h4>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            {% if ema_alerts.ema200_cross_above %}
+            <div class="col-md-6">
+                <div class="alert alert-success">
+                    <i class="fas fa-arrow-up"></i> <strong>Price Crossed ABOVE EMA 200</strong><br>
+                    <small>🚀 {{ symbol }} crossed ABOVE EMA 200 - Market regime change detected!</small>
+                </div>
+            </div>
+            {% endif %}
+            {% if ema_alerts.ema200_cross_below %}
+            <div class="col-md-6">
+                <div class="alert alert-danger">
+                    <i class="fas fa-arrow-down"></i> <strong>Price Crossed BELOW EMA 200</strong><br>
+                    <small>⚠️ {{ symbol }} crossed BELOW EMA 200 - Bearish trend detected!</small>
+                </div>
+            </div>
+            {% endif %}
+            {% if ema_alerts.ema50_cross_above %}
+            <div class="col-md-6">
+                <div class="alert alert-info">
+                    <i class="fas fa-arrow-up"></i> <strong>Price Crossed ABOVE EMA 50</strong><br>
+                    <small>{{ symbol }} crossed ABOVE EMA 50 - Trend change detected!</small>
+                </div>
+            </div>
+            {% endif %}
+            {% if ema_alerts.ema50_cross_below %}
+            <div class="col-md-6">
+                <div class="alert alert-warning">
+                    <i class="fas fa-arrow-down"></i> <strong>Price Crossed BELOW EMA 50</strong><br>
+                    <small>{{ symbol }} crossed BELOW EMA 50 - Trend change detected!</small>
+                </div>
+            </div>
+            {% endif %}
+            {% if ema_alerts.ema20_cross_above %}
+            <div class="col-md-6">
+                <div class="alert alert-success">
+                    <i class="fas fa-arrow-up"></i> <strong>Price Reclaimed EMA 20</strong><br>
+                    <small>{{ symbol }} reclaimed EMA 20 - Entry timing signal!</small>
+                </div>
+            </div>
+            {% endif %}
+            {% if ema_alerts.ema20_cross_below %}
+            <div class="col-md-6">
+                <div class="alert alert-danger">
+                    <i class="fas fa-arrow-down"></i> <strong>Price Lost EMA 20</strong><br>
+                    <small>{{ symbol }} lost EMA 20 - Exit timing signal!</small>
+                </div>
+            </div>
+            {% endif %}
+            {% if not ema_alerts.ema200_cross_above and not ema_alerts.ema200_cross_below and not ema_alerts.ema50_cross_above and not ema_alerts.ema50_cross_below and not ema_alerts.ema20_cross_above and not ema_alerts.ema20_cross_below %}
+            <div class="col-12">
+                <div class="alert alert-secondary">
+                    <i class="fas fa-info-circle"></i> No EMA crossover alerts detected in recent bars. Monitor for potential signals.
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- AI Buy/Sell Recommendation -->
+<div class="card mb-4" id="ai-recommendation">
+    <div class="card-header" style="background: {% if recommendation.action == 'BUY' or recommendation.action == 'STRONG_BUY' %}var(--gradient-success){% elif recommendation.action == 'SELL' or recommendation.action == 'STRONG_SELL' %}var(--gradient-danger){% else %}linear-gradient(135deg, var(--warning) 0%, #d97706 100%){% endif %}; color: white; border: none;">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-3">
+            <div>
+                <h4 class="mb-2" style="font-size: 1.5rem; font-weight: 700;">
+                    <i class="fas fa-{% if recommendation.action == 'BUY' or recommendation.action == 'STRONG_BUY' %}arrow-up{% elif recommendation.action == 'SELL' or recommendation.action == 'STRONG_SELL' %}arrow-down{% else %}pause{% endif %}"></i>
+                    {{ recommendation.action }}
+                </h4>
+                <div style="opacity: 0.95;">
+                    <span style="font-weight: 600;">Confidence: {{ recommendation.confidence }}%</span>
+                    <span class="mx-2">•</span>
+                    <span style="font-weight: 600;">Score: {{ recommendation.overall_score }}/100</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="card-body">
+        <div class="row mb-4">
+            <div class="col-md-3">
+                <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border: 2px solid var(--primary); border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem;">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Current Price</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">${{ "%.2f"|format(summary_stats.current_price) }}</div>
+                    <div class="{% if summary_stats.price_change >= 0 %}text-success{% else %}text-danger{% endif %}" style="font-weight: 700;">
+                        {{ "+" if summary_stats.price_change >= 0 else "" }}{{ "%.2f"|format(summary_stats.price_change) }} 
+                        ({{ "+" if summary_stats.price_change_pct >= 0 else "" }}{{ "%.2f"|format(summary_stats.price_change_pct) }}%)
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-9">
+                <h5 class="mb-3" style="color: var(--primary); font-weight: 600;">
+                    <i class="fas fa-lightbulb"></i> AI Reasoning
+                </h5>
+                <div style="white-space: pre-wrap; color: var(--text-secondary); line-height: 1.8; background: var(--bg-secondary); padding: 1.25rem; border-radius: var(--radius);">
+                    {{ recommendation.reasoning }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Factor Scores -->
+        {% if recommendation.factors %}
+        <div class="row g-3 mt-3">
+            <div class="col-md-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div style="font-size: 1.5rem; color: var(--info); margin-bottom: 0.5rem;">
+                            <i class="fas fa-chart-line"></i>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Technical</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--info);">{{ recommendation.factors.technical }}/100</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div style="font-size: 1.5rem; color: var(--success); margin-bottom: 0.5rem;">
+                            <i class="fas fa-building"></i>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Fundamental</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">{{ recommendation.factors.fundamental }}/100</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div style="font-size: 1.5rem; color: var(--primary); margin-bottom: 0.5rem;">
+                            <i class="fas fa-chart-area"></i>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Market Structure</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">{{ recommendation.factors.market_structure }}/100</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div style="font-size: 1.5rem; color: var(--warning); margin-bottom: 0.5rem;">
+                            <i class="fas fa-trending-up"></i>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Trend Strength</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning);">{{ recommendation.factors.trend_strength }}/100</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-2">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div style="font-size: 1.5rem; color: var(--secondary); margin-bottom: 0.5rem;">
+                            <i class="fas fa-chart-bar"></i>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Volume</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--secondary);">{{ recommendation.factors.volume }}/100</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Smart Entry & Exit System -->
+{% if entry_exit %}
+<div class="card mb-4" id="entry-exit">
+    <div class="card-header" style="background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-bullseye"></i> Smart Entry & Exit System</h4>
+    </div>
+    <div class="card-body">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--info); border-radius: var(--radius); padding: 1.25rem;">
+                    <div style="font-size: 1.5rem; color: var(--info); margin-bottom: 0.5rem;">
+                        <i class="fas fa-rocket"></i> Aggressive Entry
+                    </div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--info);">${{ "%.2f"|format(entry_exit.entry.aggressive) }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--success); border-radius: var(--radius); padding: 1.25rem;">
+                    <div style="font-size: 1.5rem; color: var(--success); margin-bottom: 0.5rem;">
+                        <i class="fas fa-shield-alt"></i> Safe Entry
+                    </div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--success);">${{ "%.2f"|format(entry_exit.entry.safe) }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: var(--radius); padding: 1.25rem;">
+                    <div style="font-size: 1.5rem; color: var(--primary); margin-bottom: 0.5rem;">
+                        <i class="fas fa-dollar-sign"></i> Current Price
+                    </div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">${{ "%.2f"|format(entry_exit.entry.current) }}</div>
+                </div>
+            </div>
+        </div>
+
+        <h5 class="mb-3" style="color: var(--primary); font-weight: 600;">
+            <i class="fas fa-trophy"></i> Profit Targets
+        </h5>
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%); border: 2px solid var(--success); border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="font-size: 1.5rem; color: var(--success); margin-bottom: 0.5rem;">
+                        <i class="fas fa-flag"></i> Target 1 (25%)
+                    </div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--success);">${{ "%.2f"|format(entry_exit.exit.partial_1) }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%); border: 2px solid var(--success); border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="font-size: 1.5rem; color: var(--success); margin-bottom: 0.5rem;">
+                        <i class="fas fa-flag"></i> Target 2 (50%)
+                    </div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--success);">${{ "%.2f"|format(entry_exit.exit.partial_2) }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%); border: 2px solid var(--success); border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="font-size: 1.5rem; color: var(--success); margin-bottom: 0.5rem;">
+                        <i class="fas fa-flag-checkered"></i> Final Exit (100%)
+                    </div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--success);">${{ "%.2f"|format(entry_exit.exit.final) }}</div>
+                </div>
+            </div>
+        </div>
+
+        {% if entry_exit.risk_reward %}
+        <div class="mt-4">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <div style="background: var(--info-light); padding: 1rem; border-radius: var(--radius);">
+                        <strong style="color: var(--info);">Risk/Reward Ratio:</strong> 
+                        <span style="font-size: 1.5rem; font-weight: 700; color: var(--info);">{{ "%.2f"|format(entry_exit.risk_reward) }}:1</span>
+                    </div>
+                </div>
+                <div class="col-md-6">
+                    <div style="background: var(--warning-light); padding: 1rem; border-radius: var(--radius);">
+                        <strong style="color: var(--warning);">Risk Amount:</strong> 
+                        <span style="font-size: 1.5rem; font-weight: 700; color: var(--warning);">${{ "%.2f"|format(entry_exit.risk_amount) }} ({{ "%.2f"|format(entry_exit.risk_percent) }}%)</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+
+<!-- Chart -->
+{% if has_chart and chart_html %}
+<div class="card mb-4" id="chart">
+    <div class="card-header" style="background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-chart-bar"></i> Comprehensive Trading Chart - All Indicators (Swing & Long-Term Traders)</h4>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; opacity: 0.9;">
+            <i class="fas fa-info-circle"></i> Includes: EMA 20/50/200, VWAP, Bollinger Bands, RSI, Stochastic, MACD, Volume, Support/Resistance
+        </p>
+    </div>
+    <div class="card-body">
+        {{ chart_html|safe }}
+    </div>
+</div>
+{% endif %}
+
+{% if comparison_chart_html %}
+<div class="card mb-4" id="comparison-chart">
+    <div class="card-header" style="background: linear-gradient(135deg, #6D5BFF, #C05CFF, #FF5C93); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;">
+            <i class="fas fa-chart-bar"></i> 1 Hour vs 1 Day Comparison
+        </h4>
+    </div>
+    <div class="card-body">
+        {{ comparison_chart_html|safe }}
+    </div>
+</div>
+{% endif %}
+
+<!-- Swing Trading Analysis - Price-Based Entry/Exit -->
+{% if swing_trading_plan and 'error' not in swing_trading_plan %}
+<div class="card mb-4" id="swing-trading">
+    <div class="card-header" style="background: linear-gradient(135deg, #10b981 0%, #059669 100%); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-dollar-sign"></i> Swing Trading - Entry & Exit Price Levels</h4>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; opacity: 0.9;">
+            <i class="fas fa-info-circle"></i> Actionable price levels for swing traders (1-5 days) and intraday traders
+        </p>
+    </div>
+    <div class="card-body">
+        <!-- Current Price & Direction -->
+        <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%); border: 2px solid {% if swing_trading_plan.direction == 'BULLISH' %}var(--success){% elif swing_trading_plan.direction == 'BEARISH' %}var(--danger){% else %}var(--info){% endif %}; border-radius: var(--radius); padding: 1.5rem; margin-bottom: 2rem; text-align: center;">
+            <div class="row align-items-center">
+                <div class="col-md-4">
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">Current Price</div>
+                    <div style="font-size: 2.5rem; font-weight: 700; color: var(--primary);">${{ "%.2f"|format(swing_trading_plan.current_price) }}</div>
+                </div>
+                <div class="col-md-4">
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">Recommendation</div>
+                    <div>
+                        <span class="badge" style="background: {% if swing_trading_plan.direction == 'BULLISH' %}var(--success){% elif swing_trading_plan.direction == 'BEARISH' %}var(--danger){% else %}var(--info){% endif %}; padding: 0.75rem 1.5rem; font-size: 1.1rem; font-weight: 600;">
+                            {{ swing_trading_plan.recommendation }}
+                        </span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">Holding Period</div>
+                    <div style="font-size: 1.25rem; font-weight: 600; color: var(--text-primary);">
+                        {% if swing_trading_plan.trading_strategy %}{{ swing_trading_plan.trading_strategy.holding_period }}{% else %}1-5 days{% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row g-3">
+            <!-- Entry Levels -->
+            <div class="col-md-6">
+                <h5 style="color: var(--success); font-weight: 700; margin-bottom: 1.5rem;">
+                    <i class="fas fa-arrow-circle-down"></i> Entry Price Levels
+                </h5>
+                
+                {% if swing_trading_plan.entry_levels %}
+                <!-- Ideal Entry (Recommended) -->
+                {% if swing_trading_plan.entry_levels.ideal %}
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.15) 0%, rgba(5, 150, 105, 0.15) 100%); border: 2px solid var(--success); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1rem;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong style="color: var(--text-primary); font-size: 1.1rem;">
+                                <i class="fas fa-star"></i> Ideal Entry (Recommended)
+                            </strong>
+                        </div>
+                        <span class="badge" style="background: var(--success); padding: 0.5rem 1rem; font-size: 1rem; font-weight: 700;">
+                            ${{ "%.2f"|format(swing_trading_plan.entry_levels.ideal.price) }}
+                        </span>
+                    </div>
+                    <p style="margin: 0.5rem 0; color: var(--text-secondary); font-size: 0.9rem;">
+                        {{ swing_trading_plan.entry_levels.ideal.description }}
+                    </p>
+                    <div style="margin-top: 0.75rem; padding-top: 0.75rem; border-top: 1px solid rgba(16, 185, 129, 0.3);">
+                        <div class="row">
+                            <div class="col-6">
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">Position Size</div>
+                                <div style="font-weight: 600; color: var(--text-primary);">{{ swing_trading_plan.entry_levels.ideal.shares }} shares</div>
+                            </div>
+                            <div class="col-6">
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">Risk Amount</div>
+                                <div style="font-weight: 600; color: var(--danger);">${{ "%.2f"|format(swing_trading_plan.entry_levels.ideal.risk) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Aggressive Entry -->
+                {% if swing_trading_plan.entry_levels.aggressive %}
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-left: 4px solid var(--warning); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong style="color: var(--text-primary);">Aggressive Entry</strong>
+                            <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.875rem;">
+                                {{ swing_trading_plan.entry_levels.aggressive.description }}
+                            </p>
+                        </div>
+                        <span style="font-size: 1.25rem; font-weight: 700; color: var(--warning);">
+                            ${{ "%.2f"|format(swing_trading_plan.entry_levels.aggressive.price) }}
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
+                
+                <!-- Safe Entry -->
+                {% if swing_trading_plan.entry_levels.safe %}
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-left: 4px solid var(--info); border-radius: var(--radius); padding: 1rem;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong style="color: var(--text-primary);">Safe Entry</strong>
+                            <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.875rem;">
+                                {{ swing_trading_plan.entry_levels.safe.description }}
+                            </p>
+                        </div>
+                        <span style="font-size: 1.25rem; font-weight: 700; color: var(--info);">
+                            ${{ "%.2f"|format(swing_trading_plan.entry_levels.safe.price) }}
+                        </span>
+                    </div>
+                </div>
+                {% endif %}
+                {% endif %}
+            </div>
+            
+            <!-- Stop Loss & Profit Targets -->
+            <div class="col-md-6">
+                <h5 style="color: var(--danger); font-weight: 700; margin-bottom: 1.5rem;">
+                    <i class="fas fa-shield-alt"></i> Stop Loss & Profit Targets
+                </h5>
+                
+                <!-- Stop Loss -->
+                {% if swing_trading_plan.stop_loss %}
+                <div style="background: linear-gradient(135deg, rgba(239, 68, 68, 0.15) 0%, rgba(220, 38, 38, 0.15) 100%); border: 2px solid var(--danger); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.5rem;">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div>
+                            <strong style="color: var(--text-primary); font-size: 1.1rem;">
+                                <i class="fas fa-exclamation-triangle"></i> Stop Loss
+                            </strong>
+                        </div>
+                        <span style="font-size: 1.5rem; font-weight: 700; color: var(--danger);">
+                            ${{ "%.2f"|format(swing_trading_plan.stop_loss.price) }}
+                        </span>
+                    </div>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.875rem;">
+                        {{ swing_trading_plan.stop_loss.distance_pct }}% below entry | {{ swing_trading_plan.stop_loss.description }}
+                    </p>
+                </div>
+                {% endif %}
+                
+                <!-- Profit Targets -->
+                {% if swing_trading_plan.profit_targets %}
+                <div>
+                    <h6 style="color: var(--success); font-weight: 600; margin-bottom: 1rem;">
+                        <i class="fas fa-bullseye"></i> Profit Targets
+                    </h6>
+                    
+                    {% if swing_trading_plan.profit_targets.target_1 %}
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-left: 4px solid var(--success); border-radius: var(--radius); padding: 1rem; margin-bottom: 0.75rem;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong style="color: var(--text-primary);">Target 1: {{ swing_trading_plan.profit_targets.target_1.timeframe if swing_trading_plan.profit_targets.target_1.timeframe is defined else '1-2 days' }}</strong>
+                            <span style="font-size: 1.25rem; font-weight: 700; color: var(--success);">
+                                ${{ "%.2f"|format(swing_trading_plan.profit_targets.target_1.price) }}
+                            </span>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                            {% if swing_trading_plan.profit_targets.target_1.profit_pct is defined %}
+                            Profit: +{{ "%.2f"|format(swing_trading_plan.profit_targets.target_1.profit_pct) }}% | 
+                            {% endif %}
+                            {% if swing_trading_plan.profit_targets.target_1.risk_reward is defined %}
+                            R:R {{ "%.2f"|format(swing_trading_plan.profit_targets.target_1.risk_reward) }}:1 | 
+                            {% endif %}
+                            {% if swing_trading_plan.profit_targets.target_1.position_exit is defined %}
+                            Exit {{ swing_trading_plan.profit_targets.target_1.position_exit }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if swing_trading_plan.profit_targets.target_2 %}
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-left: 4px solid var(--success); border-radius: var(--radius); padding: 1rem; margin-bottom: 0.75rem;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong style="color: var(--text-primary);">Target 2: {{ swing_trading_plan.profit_targets.target_2.timeframe if swing_trading_plan.profit_targets.target_2.timeframe is defined else '3-5 days' }}</strong>
+                            <span style="font-size: 1.25rem; font-weight: 700; color: var(--success);">
+                                ${{ "%.2f"|format(swing_trading_plan.profit_targets.target_2.price) }}
+                            </span>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                            {% if swing_trading_plan.profit_targets.target_2.profit_pct is defined %}
+                            Profit: +{{ "%.2f"|format(swing_trading_plan.profit_targets.target_2.profit_pct) }}% | 
+                            {% endif %}
+                            {% if swing_trading_plan.profit_targets.target_2.risk_reward is defined %}
+                            R:R {{ "%.2f"|format(swing_trading_plan.profit_targets.target_2.risk_reward) }}:1 | 
+                            {% endif %}
+                            {% if swing_trading_plan.profit_targets.target_2.position_exit is defined %}
+                            Exit {{ swing_trading_plan.profit_targets.target_2.position_exit }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    {% if swing_trading_plan.profit_targets.target_3 %}
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-left: 4px solid var(--success); border-radius: var(--radius); padding: 1rem;">
+                        <div class="d-flex justify-content-between align-items-center mb-1">
+                            <strong style="color: var(--text-primary);">Target 3: {{ swing_trading_plan.profit_targets.target_3.timeframe if swing_trading_plan.profit_targets.target_3.timeframe is defined else 'Extended' }}</strong>
+                            <span style="font-size: 1.25rem; font-weight: 700; color: var(--success);">
+                                ${{ "%.2f"|format(swing_trading_plan.profit_targets.target_3.price) }}
+                            </span>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">
+                            {% if swing_trading_plan.profit_targets.target_3.profit_pct is defined %}
+                            Profit: +{{ "%.2f"|format(swing_trading_plan.profit_targets.target_3.profit_pct) }}% | 
+                            {% endif %}
+                            {% if swing_trading_plan.profit_targets.target_3.risk_reward is defined %}
+                            R:R {{ "%.2f"|format(swing_trading_plan.profit_targets.target_3.risk_reward) }}:1 | 
+                            {% endif %}
+                            {% if swing_trading_plan.profit_targets.target_3.position_exit is defined %}
+                            Exit {{ swing_trading_plan.profit_targets.target_3.position_exit }}
+                            {% endif %}
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        <!-- Trading Strategy & Risk Analysis -->
+        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid var(--border);">
+            <div class="row g-3">
+                <div class="col-md-6">
+                    <h5 style="color: var(--primary); font-weight: 600; margin-bottom: 1rem;">
+                        <i class="fas fa-chart-line"></i> Trading Strategy
+                    </h5>
+                    {% if swing_trading_plan.trading_strategy %}
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;">
+                        <p style="margin: 0 0 0.75rem 0; color: var(--text-primary);">
+                            <strong>Entry Strategy:</strong> {{ swing_trading_plan.trading_strategy.entry_strategy if swing_trading_plan.trading_strategy.entry_strategy is defined else 'N/A' }}
+                        </p>
+                        <p style="margin: 0; color: var(--text-primary);">
+                            <strong>Exit Strategy:</strong> {{ swing_trading_plan.trading_strategy.exit_strategy if swing_trading_plan.trading_strategy.exit_strategy is defined else 'N/A' }}
+                        </p>
+                    </div>
+                    {% else %}
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;">
+                        <p style="margin: 0; color: var(--text-secondary);">Strategy information not available</p>
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="col-md-6">
+                    <h5 style="color: var(--warning); font-weight: 600; margin-bottom: 1rem;">
+                        <i class="fas fa-calculator"></i> Risk Analysis
+                    </h5>
+                    {% if swing_trading_plan.risk_analysis %}
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;">
+                        <div class="row">
+                            <div class="col-6">
+                                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Risk per Share</div>
+                                <div style="font-weight: 600; color: var(--text-primary);">${{ "%.2f"|format(swing_trading_plan.risk_analysis.risk_per_share) }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Max Risk %</div>
+                                <div style="font-weight: 600; color: var(--danger);">{{ "%.2f"|format(swing_trading_plan.risk_analysis.max_risk_pct) }}%</div>
+                            </div>
+                            <div class="col-6" style="margin-top: 0.75rem;">
+                                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Position Size</div>
+                                <div style="font-weight: 600; color: var(--text-primary);">{{ swing_trading_plan.risk_analysis.recommended_position_size }} shares</div>
+                            </div>
+                            <div class="col-6" style="margin-top: 0.75rem;">
+                                <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Total Risk</div>
+                                <div style="font-weight: 600; color: var(--danger);">${{ "%.2f"|format(swing_trading_plan.risk_analysis.total_risk_amount) }}</div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Intraday Levels (if available) -->
+        {% if intraday_levels %}
+        <div style="margin-top: 2rem; padding-top: 2rem; border-top: 2px solid var(--border);">
+            <h5 style="color: var(--info); font-weight: 600; margin-bottom: 1rem;">
+                <i class="fas fa-clock"></i> Intraday Trading Levels (Same Day)
+            </h5>
+            <div class="row g-3">
+                {% if intraday_levels.intraday_long %}
+                <div class="col-md-6">
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-left: 4px solid var(--success); border-radius: var(--radius); padding: 1rem;">
+                        <h6 style="color: var(--success); font-weight: 600; margin-bottom: 0.75rem;">Long Position</h6>
+                        <div style="font-size: 0.875rem;">
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>Entry:</strong> ${{ "%.2f"|format(intraday_levels.intraday_long.entry) }} | 
+                                <strong>Stop:</strong> ${{ "%.2f"|format(intraday_levels.intraday_long.stop_loss) }}
+                            </div>
+                            <div>
+                                <strong>Target 1:</strong> ${{ "%.2f"|format(intraday_levels.intraday_long.target_1) }} | 
+                                <strong>Target 2:</strong> ${{ "%.2f"|format(intraday_levels.intraday_long.target_2) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+                {% if intraday_levels.intraday_short %}
+                <div class="col-md-6">
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-left: 4px solid var(--danger); border-radius: var(--radius); padding: 1rem;">
+                        <h6 style="color: var(--danger); font-weight: 600; margin-bottom: 0.75rem;">Short Position</h6>
+                        <div style="font-size: 0.875rem;">
+                            <div style="margin-bottom: 0.5rem;">
+                                <strong>Entry:</strong> ${{ "%.2f"|format(intraday_levels.intraday_short.entry) }} | 
+                                <strong>Stop:</strong> ${{ "%.2f"|format(intraday_levels.intraday_short.stop_loss) }}
+                            </div>
+                            <div>
+                                <strong>Target 1:</strong> ${{ "%.2f"|format(intraday_levels.intraday_short.target_1) }} | 
+                                <strong>Target 2:</strong> ${{ "%.2f"|format(intraday_levels.intraday_short.target_2) }}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Technical Analysis with Explanations -->
+<div class="card mb-4" id="technical">
+    <div class="card-header" style="background: linear-gradient(135deg, var(--info) 0%, #2563eb 100%); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-chart-line"></i> Technical Analysis with AI Explanations</h4>
+    </div>
+    <div class="card-body">
+        <div class="row mb-3">
+            <div class="col-md-6">
+                <h5 style="color: var(--primary); font-weight: 600; margin-bottom: 1rem;">Overall Signal: <span style="color: var(--text-primary);">{{ technical_signals.overall }}</span></h5>
+                <p><strong>Buy Signals:</strong> {{ technical_signals.buy_signals }} | <strong>Sell Signals:</strong> {{ technical_signals.sell_signals }}</p>
+            </div>
+        </div>
+        
+        {% if technical_explanations and technical_explanations.explanations %}
+        <div class="row g-3 mb-4">
+            {% for explanation in technical_explanations.explanations %}
+            <div class="col-md-6">
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-left: 4px solid {% if explanation.status == 'BULLISH' %}var(--success){% elif explanation.status == 'BEARISH' %}var(--danger){% else %}var(--info){% endif %}; border-radius: var(--radius); padding: 1.25rem;">
+                    <div class="d-flex justify-content-between align-items-start mb-2">
+                        <div>
+                            <strong style="color: var(--text-primary); font-size: 1.1rem;">
+                                <i class="fas fa-{% if explanation.status == 'BULLISH' %}arrow-up{% elif explanation.status == 'BEARISH' %}arrow-down{% else %}minus{% endif %}"></i>
+                                {{ explanation.indicator }}
+                            </strong>
+                            <span class="badge {% if explanation.status == 'BULLISH' %}bg-success{% elif explanation.status == 'BEARISH' %}bg-danger{% else %}bg-info{% endif %}" style="margin-left: 0.5rem;">
+                                {{ explanation.status }}
+                            </span>
+                        </div>
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.95rem; line-height: 1.6; margin-bottom: 0.5rem;">
+                        {{ explanation.explanation }}
+                    </div>
+                    {% if explanation.action %}
+                    <div style="color: var(--primary); font-size: 0.875rem; font-weight: 600; margin-top: 0.5rem;">
+                        <i class="fas fa-lightbulb"></i> {{ explanation.action }}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% if technical_explanations.summary %}
+        <div class="alert alert-info">
+            <strong><i class="fas fa-info-circle"></i> Summary:</strong> {{ technical_explanations.summary }}
+        </div>
+        {% endif %}
+        {% elif technical_signals.signals %}
+        <div class="row g-3">
+            {% for signal in technical_signals.signals %}
+            <div class="col-md-6">
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div>
+                            <strong style="color: var(--text-primary);">{{ signal.indicator }}</strong>
+                            <div style="color: var(--text-secondary); font-size: 0.875rem;">{{ signal.reason }}</div>
+                        </div>
+                        <span class="badge {% if signal.signal == 'BUY' %}bg-success{% elif signal.signal == 'SELL' %}bg-danger{% else %}bg-info{% endif %}" style="padding: 0.5rem 1rem;">
+                            {{ signal.signal }}
+                        </span>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- AI Stop Loss Manager -->
+{% if stop_loss_data %}
+<div class="card mb-4" id="stop-loss">
+    <div class="card-header" style="background: linear-gradient(135deg, var(--danger) 0%, #dc2626 100%); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-shield-alt"></i> AI Stop Loss Manager</h4>
+    </div>
+    <div class="card-body">
+        <div class="row g-3 mb-4">
+            <div class="col-md-4">
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--danger); border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="font-size: 1.5rem; color: var(--danger); margin-bottom: 0.5rem;">
+                        <i class="fas fa-stop-circle"></i> Stop Loss
+                    </div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--danger);">${{ "%.2f"|format(stop_loss_data.stop_loss) }}</div>
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.5rem;">Type: {{ stop_loss_data.stop_loss_type|upper }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--warning); border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="font-size: 1.5rem; color: var(--warning); margin-bottom: 0.5rem;">
+                        <i class="fas fa-ruler"></i> Distance
+                    </div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">${{ "%.2f"|format(stop_loss_data.distance) }}</div>
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.5rem;">{{ "%.2f"|format(stop_loss_data.distance_pct) }}% from entry</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div style="background: var(--bg-card); border: 1px solid var(--border); border-left: 4px solid var(--info); border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="font-size: 1.5rem; color: var(--info); margin-bottom: 0.5rem;">
+                        <i class="fas fa-bell"></i> Alert Threshold
+                    </div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--info);">${{ "%.2f"|format(stop_loss_data.alert_threshold) }}</div>
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; margin-top: 0.5rem;">Warns at this price</div>
+                </div>
+            </div>
+        </div>
+        <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--radius);">
+            <strong style="color: var(--text-primary);">Reasoning:</strong>
+            <p style="color: var(--text-secondary); margin-top: 0.5rem; margin-bottom: 0;">{{ stop_loss_data.reasoning }}</p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Risk Management Dashboard -->
+{% if risk_calculation %}
+<div class="card mb-4" id="risk-management">
+    <div class="card-header" style="background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-calculator"></i> Risk Management Dashboard</h4>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div style="font-size: 1.5rem; color: var(--warning); margin-bottom: 0.5rem;">
+                            <i class="fas fa-percentage"></i>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Risk Per Trade</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--warning);">{{ "%.2f"|format(risk_calculation.risk_per_trade) }}%</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div style="font-size: 1.5rem; color: var(--danger); margin-bottom: 0.5rem;">
+                            <i class="fas fa-dollar-sign"></i>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Risk Amount</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--danger);">${{ "%.2f"|format(risk_calculation.risk_amount) }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div style="font-size: 1.5rem; color: var(--info); margin-bottom: 0.5rem;">
+                            <i class="fas fa-chart-pie"></i>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Position Size</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--info);">${{ "%.2f"|format(risk_calculation.position_size) }}</div>
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div class="card text-center">
+                    <div class="card-body">
+                        <div style="font-size: 1.5rem; color: var(--success); margin-bottom: 0.5rem;">
+                            <i class="fas fa-coins"></i>
+                        </div>
+                        <div style="font-size: 0.875rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Shares</div>
+                        <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">{{ risk_calculation.shares }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% if entry_exit.position_sizing %}
+        <div class="mt-4">
+            <h5 style="color: var(--primary); font-weight: 600; margin-bottom: 1rem;">
+                <i class="fas fa-balance-scale"></i> Position Sizing Recommendations
+            </h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div style="background: var(--success-light); padding: 1rem; border-radius: var(--radius); border-left: 4px solid var(--success);">
+                        <strong style="color: var(--success);">Conservative:</strong> 
+                        <span style="font-size: 1.25rem; font-weight: 700; color: var(--success);">{{ "%.2f"|format(entry_exit.position_sizing.conservative) }} shares</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div style="background: var(--info-light); padding: 1rem; border-radius: var(--radius); border-left: 4px solid var(--info);">
+                        <strong style="color: var(--info);">Moderate:</strong> 
+                        <span style="font-size: 1.25rem; font-weight: 700; color: var(--info);">{{ "%.2f"|format(entry_exit.position_sizing.moderate) }} shares</span>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div style="background: var(--warning-light); padding: 1rem; border-radius: var(--radius); border-left: 4px solid var(--warning);">
+                        <strong style="color: var(--warning);">Aggressive:</strong> 
+                        <span style="font-size: 1.25rem; font-weight: 700; color: var(--warning);">{{ "%.2f"|format(entry_exit.position_sizing.aggressive) }} shares</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Watchlist Daily Levels (Intraday & Swing) -->
+{% if watchlist_levels %}
+<div class="card mb-4" id="watchlist-levels">
+    <div class="card-header" style="background: linear-gradient(135deg, #0ea5e9 0%, #6366f1 100%); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-list"></i> Watchlist Daily Levels - Intraday & Swing</h4>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; opacity: 0.9;">
+            <i class="fas fa-info-circle"></i> Prior day high/low and suggested entry prices for each stock in your watchlist.
+        </p>
+    </div>
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-dark table-hover align-middle">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Prior High</th>
+                        <th>Prior Low</th>
+                        <th>Current Price</th>
+                        <th>Best Intraday Entry</th>
+                        <th>Best Swing Entry</th>
+                        <th>Action</th>
+                        <th>Risk/Reward</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in watchlist_levels %}
+                    <tr onclick="analyzeStock('{{ w.symbol }}', 'stock')" style="cursor: pointer;">
+                        <td><strong>{{ w.symbol }}</strong></td>
+                        <td>${{ "%.2f"|format(w.prior_high) }}</td>
+                        <td>${{ "%.2f"|format(w.prior_low) }}</td>
+                        <td>${{ "%.2f"|format(w.current_price) }}</td>
+                        <td>
+                            {% if w.best_intraday_entry %}
+                            <span class="text-info">${{ "%.2f"|format(w.best_intraday_entry) }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if w.best_swing_entry %}
+                            <span class="text-success">${{ "%.2f"|format(w.best_swing_entry) }}</span>
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                        <td>
+                            <span class="badge {% if w.action == 'BUY' or w.action == 'STRONG_BUY' %}bg-success{% elif w.action == 'SELL' or w.action == 'STRONG_SELL' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                {{ w.action }}
+                            </span>
+                        </td>
+                        <td>
+                            {% if w.risk_reward %}
+                            {{ "%.2f"|format(w.risk_reward) }}:1
+                            {% else %}
+                            -
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        <p style="font-size: 0.8rem; color: var(--text-secondary); margin-top: 0.75rem;">
+            Click any row to open full analysis for that symbol.
+        </p>
+    </div>
+</div>
+{% endif %}
+
+<!-- Fundamental Analysis with AI Summary -->
+<div class="card mb-4" id="fundamental">
+    <div class="card-header" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-building"></i> Fundamental Analysis with AI Summary</h4>
+    </div>
+    <div class="card-body">
+        {% if fundamental_data and 'error' not in fundamental_data %}
+        {% if fundamental_data.ai_summary %}
+        <div class="alert alert-info mb-4" style="background: linear-gradient(135deg, rgba(59, 130, 246, 0.1) 0%, rgba(37, 99, 235, 0.1) 100%); border-left: 4px solid var(--info);">
+            <h5 style="color: var(--info); font-weight: 600; margin-bottom: 0.75rem;">
+                <i class="fas fa-robot"></i> AI Analysis Summary
+            </h5>
+            <p style="color: var(--text-primary); line-height: 1.8; margin: 0;">{{ fundamental_data.ai_summary }}</p>
+        </div>
+        {% endif %}
+        
+        {% if fundamental_data.valuation_assessment %}
+        <div class="mb-4">
+            <div class="alert {% if fundamental_data.valuation_assessment.valuation == 'UNDERVALUED' %}alert-success{% elif fundamental_data.valuation_assessment.valuation == 'OVERVALUED' %}alert-warning{% else %}alert-info{% endif %}">
+                <strong><i class="fas fa-chart-pie"></i> Valuation Assessment:</strong> 
+                {{ fundamental_data.valuation_assessment.valuation }} - {{ fundamental_data.valuation_assessment.message }}
+            </div>
+        </div>
+        {% endif %}
+        
+        <div class="row g-3">
+            <div class="col-md-6">
+                <h5 style="color: var(--primary); font-weight: 600; margin-bottom: 1rem;">
+                    <i class="fas fa-dollar-sign"></i> Valuation
+                </h5>
+                <table class="table">
+                    <tr><td>Market Cap:</td><td><strong>{% if fundamental_data.valuation and fundamental_data.valuation.market_cap %}{% set cap = fundamental_data.valuation.market_cap %}{% if cap >= 1e12 %}${{ "%.2f"|format(cap / 1e12) }}T{% elif cap >= 1e9 %}${{ "%.2f"|format(cap / 1e9) }}B{% elif cap >= 1e6 %}${{ "%.2f"|format(cap / 1e6) }}M{% else %}${{ "%.0f"|format(cap) }}{% endif %}{% else %}N/A{% endif %}</strong></td></tr>
+                    <tr><td>P/E Ratio:</td><td><strong>{{ fundamental_data.valuation.pe_ratio if fundamental_data.valuation and fundamental_data.valuation.pe_ratio else 'N/A' }}</strong></td></tr>
+                    <tr><td>P/B Ratio:</td><td><strong>{{ fundamental_data.valuation.price_to_book if fundamental_data.valuation and fundamental_data.valuation.price_to_book else 'N/A' }}</strong></td></tr>
+                </table>
+            </div>
+            <div class="col-md-6">
+                <h5 style="color: var(--primary); font-weight: 600; margin-bottom: 1rem;">
+                    <i class="fas fa-chart-line"></i> Profitability
+                </h5>
+                <table class="table">
+                    <tr><td>Profit Margin:</td><td><strong>{% if fundamental_data.profitability and fundamental_data.profitability.profit_margin %}{{ "%.2f"|format(fundamental_data.profitability.profit_margin) }}%{% else %}N/A{% endif %}</strong></td></tr>
+                    <tr><td>ROE:</td><td><strong>{% if fundamental_data.profitability and fundamental_data.profitability.roe %}{{ "%.2f"|format(fundamental_data.profitability.roe) }}%{% else %}N/A{% endif %}</strong></td></tr>
+                    <tr><td>ROA:</td><td><strong>{% if fundamental_data.profitability and fundamental_data.profitability.roa %}{{ "%.2f"|format(fundamental_data.profitability.roa) }}%{% else %}N/A{% endif %}</strong></td></tr>
+                </table>
+            </div>
+        </div>
+        {% else %}
+        <p style="color: var(--text-secondary);">Fundamental data not available.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Predictions -->
+{% if price_predictions and 'error' not in price_predictions %}
+<div class="card mb-4" id="predictions">
+    <div class="card-header">
+        <h4 style="margin: 0; font-weight: 700; color: var(--text-primary);"><i class="fas fa-crystal-ball"></i> Price Predictions</h4>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            {% for pred in price_predictions.predictions %}
+            <div class="col-md-2">
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center;">
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; font-weight: 600;">Day {{ pred.day }}</div>
+                    <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary);">${{ pred.predicted_price }}</div>
+                    <div class="{% if pred.change >= 0 %}text-success{% else %}text-danger{% endif %}" style="font-size: 0.875rem;">
+                        {{ "+" if pred.change >= 0 else "" }}{{ "%.2f"|format(pred.change_pct) }}%
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<!-- Multi-Timeframe Predictions (1M, 3M, 6M, 12M, 24M) -->
+{% if multi_predictions and 'error' not in multi_predictions %}
+<div class="card mb-4" id="multi-predictions">
+    <div class="card-header" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;">
+            <i class="fas fa-chart-line"></i> Multi-Timeframe Price Predictions
+        </h4>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; opacity: 0.9;">
+            <i class="fas fa-info-circle"></i> Predictions based on Fundamentals, Technical Analysis & Market News
+        </p>
+    </div>
+    <div class="card-body">
+        <!-- Overall Trend Summary -->
+        {% if multi_predictions.overall_trend %}
+        <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; margin-bottom: 1.5rem;">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <h5 style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.5rem;">
+                        Overall Trend: 
+                        <span style="color: {% if multi_predictions.overall_trend.trend == 'BULLISH' %}var(--success){% elif multi_predictions.overall_trend.trend == 'BEARISH' %}var(--danger){% else %}var(--info){% endif %};">
+                            {{ multi_predictions.overall_trend.trend }}
+                        </span>
+                    </h5>
+                    <p style="margin: 0; color: var(--text-secondary); font-size: 0.9rem;">
+                        Average Change: 
+                        <strong class="{% if multi_predictions.overall_trend.average_change_pct >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ "+" if multi_predictions.overall_trend.average_change_pct >= 0 else "" }}{{ "%.2f"|format(multi_predictions.overall_trend.average_change_pct) }}%
+                        </strong>
+                        | Confidence: <strong>{{ "%.1f"|format(multi_predictions.overall_trend.average_confidence) }}%</strong>
+                    </p>
+                </div>
+                <div class="col-md-6 text-end">
+                    <div style="display: inline-block; margin-right: 1rem;">
+                        <span class="badge" style="background: var(--success); padding: 0.5rem 1rem; font-size: 0.875rem;">
+                            <i class="fas fa-arrow-up"></i> {{ multi_predictions.overall_trend.bullish_timeframes }} Bullish
+                        </span>
+                    </div>
+                    <div style="display: inline-block;">
+                        <span class="badge" style="background: var(--danger); padding: 0.5rem 1rem; font-size: 0.875rem;">
+                            <i class="fas fa-arrow-down"></i> {{ multi_predictions.overall_trend.bearish_timeframes }} Bearish
+                        </span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <!-- Timeframe Predictions -->
+        <div class="row g-3">
+            {% for timeframe in ['1M', '3M', '6M', '12M', '24M'] %}
+            {% if multi_predictions.predictions and multi_predictions.predictions[timeframe] and 'error' not in multi_predictions.predictions[timeframe] %}
+            {% set pred = multi_predictions.predictions[timeframe] %}
+            <div class="col-md-6 col-lg-4">
+                <div style="background: var(--bg-secondary); border: 2px solid {% if pred.trend == 'BULLISH' %}var(--success){% elif pred.trend == 'BEARISH' %}var(--danger){% else %}var(--border){% endif %}; border-radius: var(--radius); padding: 1.25rem; height: 100%;">
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h5 style="color: var(--text-primary); font-weight: 700; margin: 0;">
+                                <i class="fas fa-calendar-alt"></i> {{ timeframe }}
+                            </h5>
+                            <p style="margin: 0.25rem 0 0 0; color: var(--text-secondary); font-size: 0.8rem;">
+                                {{ pred.days_ahead }} days ahead
+                            </p>
+                        </div>
+                        <span class="badge" style="background: {% if pred.trend == 'BULLISH' %}var(--success){% elif pred.trend == 'BEARISH' %}var(--danger){% else %}var(--info){% endif %}; padding: 0.375rem 0.75rem;">
+                            {{ pred.trend }}
+                        </span>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 1rem 0;">
+                        <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">Predicted Price</div>
+                        <div style="font-size: 2rem; font-weight: 700; color: var(--primary); margin-bottom: 0.5rem;">
+                            ${{ "%.2f"|format(pred.predicted_price) }}
+                        </div>
+                        <div class="{% if pred.change >= 0 %}text-success{% else %}text-danger{% endif %}" style="font-size: 1.1rem; font-weight: 600;">
+                            <i class="fas fa-{% if pred.change >= 0 %}arrow-up{% else %}arrow-down{% endif %}"></i>
+                            {{ "+" if pred.change >= 0 else "" }}{{ "%.2f"|format(pred.change) }} 
+                            ({{ "+" if pred.change_pct >= 0 else "" }}{{ "%.2f"|format(pred.change_pct) }}%)
+                        </div>
+                    </div>
+                    
+                    <div style="background: rgba(109, 91, 255, 0.1); border-radius: var(--radius-sm); padding: 0.75rem; margin-top: 1rem;">
+                        <div style="font-size: 0.8rem; color: var(--text-secondary); margin-bottom: 0.5rem;">
+                            <i class="fas fa-chart-line"></i> Confidence: <strong>{{ "%.1f"|format(pred.confidence) }}%</strong>
+                        </div>
+                        {% if pred.breakdown %}
+                        <div style="font-size: 0.75rem; color: var(--text-secondary);">
+                            <div>Tech: ${{ "%.2f"|format(pred.breakdown.technical_pred) }}</div>
+                            {% if pred.breakdown.fundamental_pred %}
+                            <div>Fund: ${{ "%.2f"|format(pred.breakdown.fundamental_pred) }}</div>
+                            {% endif %}
+                            {% if pred.breakdown.news_adjustment_pct != 0 %}
+                            <div>News: {{ "+" if pred.breakdown.news_adjustment_pct >= 0 else "" }}{{ "%.1f"|format(pred.breakdown.news_adjustment_pct) }}%</div>
+                            {% endif %}
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            {% endfor %}
+        </div>
+        
+        <!-- News Sentiment (if available) -->
+        {% if news_analysis and news_analysis.sentiment_analysis %}
+        {% set sentiment = news_analysis.sentiment_analysis %}
+        <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 2px solid var(--border);">
+            <h5 style="color: var(--info); font-weight: 600; margin-bottom: 1rem;">
+                <i class="fas fa-newspaper"></i> Market News Sentiment
+            </h5>
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center;">
+                        <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">Sentiment Score</div>
+                        <div style="font-size: 1.75rem; font-weight: 700; color: {% if sentiment.sentiment_score >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                            {{ "+" if sentiment.sentiment_score >= 0 else "" }}{{ "%.1f"|format(sentiment.sentiment_score) }}
+                        </div>
+                        <div class="badge" style="background: {% if sentiment.sentiment == 'BULLISH' %}var(--success){% elif sentiment.sentiment == 'BEARISH' %}var(--danger){% else %}var(--info){% endif %}; margin-top: 0.5rem;">
+                            {{ sentiment.sentiment }}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; text-align: center;">
+                        <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">News Articles</div>
+                        <div style="font-size: 1.75rem; font-weight: 700; color: var(--primary);">
+                            {{ sentiment.news_count }}
+                        </div>
+                        <div style="color: var(--text-secondary); font-size: 0.8rem; margin-top: 0.5rem;">Last 30 days</div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem;">
+                        <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">Key Keywords</div>
+                        {% if sentiment.positive_keywords %}
+                        <div style="margin-bottom: 0.5rem;">
+                            <span class="badge" style="background: var(--success); margin-right: 0.25rem; margin-bottom: 0.25rem;">
+                                {% for keyword in sentiment.positive_keywords %}{{ keyword }}{% if not loop.last %}, {% endif %}{% endfor %}
+                            </span>
+                        </div>
+                        {% endif %}
+                        {% if sentiment.negative_keywords %}
+                        <div>
+                            <span class="badge" style="background: var(--danger); margin-right: 0.25rem; margin-bottom: 0.25rem;">
+                                {% for keyword in sentiment.negative_keywords %}{{ keyword }}{% if not loop.last %}, {% endif %}{% endfor %}
+                            </span>
+                        </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent News Headlines -->
+            {% if sentiment.recent_news %}
+            <div style="margin-top: 1rem;">
+                <h6 style="color: var(--text-primary); font-weight: 600; margin-bottom: 0.75rem;">Recent News Headlines</h6>
+                <div class="row g-2">
+                    {% for news in sentiment.recent_news %}
+                    <div class="col-md-6">
+                        <div style="background: var(--bg-secondary); border-left: 3px solid var(--primary); border-radius: var(--radius-sm); padding: 0.75rem; margin-bottom: 0.5rem;">
+                            <div style="font-size: 0.875rem; color: var(--text-primary); font-weight: 500;">
+                                {{ news.title }}
+                            </div>
+                            <div style="font-size: 0.75rem; color: var(--text-secondary); margin-top: 0.25rem;">
+                                <i class="fas fa-calendar"></i> {{ news.date }} | 
+                                <i class="fas fa-newspaper"></i> {{ news.publisher }}
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Support & Resistance -->
+{% if support_resistance and 'error' not in support_resistance %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h4 style="margin: 0; font-weight: 700; color: var(--text-primary);"><i class="fas fa-chart-area"></i> Support & Resistance</h4>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-4">
+                <div style="background: linear-gradient(135deg, rgba(16, 185, 129, 0.1) 0%, rgba(5, 150, 105, 0.1) 100%); border: 2px solid var(--success); border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="font-size: 2rem; color: var(--success); margin-bottom: 0.5rem;">
+                        <i class="fas fa-arrow-down"></i>
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Support Level</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--success);">${{ "%.2f"|format(support_resistance.support) }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div style="background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%); border: 2px solid var(--primary); border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="font-size: 2rem; color: var(--primary); margin-bottom: 0.5rem;">
+                        <i class="fas fa-dollar-sign"></i>
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Current Price</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">${{ "%.2f"|format(support_resistance.current_price) }}</div>
+                </div>
+            </div>
+            <div class="col-md-4">
+                <div style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); border: 2px solid var(--warning); border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="font-size: 2rem; color: var(--warning); margin-bottom: 0.5rem;">
+                        <i class="fas fa-arrow-up"></i>
+                    </div>
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; font-weight: 600; margin-bottom: 0.5rem;">Resistance Level</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">${{ "%.2f"|format(support_resistance.resistance) }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+<!-- Market Scanner -->
+<div class="card mb-4" id="market-scanner">
+    <div class="card-header" style="background: linear-gradient(135deg, var(--secondary) 0%, #7c3aed 100%); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-search"></i> AI Market Scanner</h4>
+    </div>
+    <div class="card-body">
+        <p style="color: var(--text-secondary);">Scan the market for breakouts, reversals, volume spikes, and trend changes.</p>
+        <a href="/market-scanner" class="btn btn-primary">
+            <i class="fas fa-search"></i> Scan Market
+        </a>
+        <div id="market-scanner-results" class="mt-3"></div>
+    </div>
+</div>
+
+<!-- Trade Journal -->
+<div class="card mb-4" id="trade-journal">
+    <div class="card-header" style="background: linear-gradient(135deg, var(--success) 0%, #059669 100%); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-book"></i> Trade Journal</h4>
+    </div>
+    <div class="card-body">
+        <p style="color: var(--text-secondary);">Track your trades and get AI feedback on your performance.</p>
+        <a href="/trade-journal" class="btn btn-success">
+            <i class="fas fa-book-open"></i> View Journal
+        </a>
+        <div id="trade-journal-content" class="mt-3"></div>
+    </div>
+</div>
+
+<!-- Alerts -->
+<div class="card mb-4" id="alerts">
+    <div class="card-header" style="background: linear-gradient(135deg, var(--warning) 0%, #d97706 100%); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-bell"></i> Custom Alerts</h4>
+    </div>
+    <div class="card-body">
+        <p style="color: var(--text-secondary);">Set up alerts for buy/sell signals, stop loss, targets, and indicator crossovers.</p>
+        <a href="/alerts" class="btn btn-warning">
+            <i class="fas fa-bell"></i> Manage Alerts
+        </a>
+        <div id="alerts-content" class="mt-3"></div>
+    </div>
+</div>
+
+<!-- Strategy Builder -->
+<div class="card mb-4" id="strategy-builder">
+    <div class="card-header" style="background: linear-gradient(135deg, var(--primary) 0%, #4f46e5 100%); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-cogs"></i> Strategy Builder</h4>
+    </div>
+    <div class="card-body">
+        <p style="color: var(--text-secondary);">Build custom trading strategies and backtest them instantly.</p>
+        <a href="/strategy" class="btn btn-primary">
+            <i class="fas fa-cogs"></i> Build Strategy
+        </a>
+        <div id="strategy-builder-content" class="mt-3"></div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    function showLoading() {
+        document.getElementById('analyze-btn').disabled = true;
+        document.getElementById('btn-text').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Analyzing...';
+        document.getElementById('loading-indicator').style.display = 'block';
+    }
+    
+    document.addEventListener('DOMContentLoaded', function() {
+        // Hide loading indicator if page has loaded with results
+        const loadingIndicator = document.getElementById('loading-indicator');
+        {% if has_analysis %}
+        const hasAnalysis = true;
+        {% else %}
+        const hasAnalysis = false;
+        {% endif %}
+        if (loadingIndicator && hasAnalysis) {
+            loadingIndicator.style.display = 'none';
+        }
+        // Re-enable analyze button
+        const analyzeBtn = document.getElementById('analyze-btn');
+        const btnText = document.getElementById('btn-text');
+        if (analyzeBtn && btnText) {
+            analyzeBtn.disabled = false;
+            btnText.innerHTML = '<i class="fas fa-chart-line"></i> Analyze';
+        }
+        
+        // Form submission is handled by POST to /analysis
+        // No need to modify the action - it will submit correctly
+    });
+    
+    
+</script>
+{% endblock %}
+

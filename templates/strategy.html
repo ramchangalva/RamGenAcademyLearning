@@ -1,0 +1,197 @@
+{% extends "base.html" %}
+
+{% block title %}Auto Strategy Generator - {{ app_name }}{% endblock %}
+
+{% block page_title %}Auto Strategy Generator{% endblock %}
+
+{% block main_content %}
+<!-- Page Banner -->
+<div class="page-banner mb-4">
+    <div class="banner-content">
+        <h1 class="banner-title">
+            <i class="fas fa-robot"></i> Automatic Strategy Generator
+        </h1>
+        <p class="banner-subtitle">AI automatically generates trading strategies based on current market analysis</p>
+    </div>
+</div>
+
+<!-- Symbol Input -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 style="margin: 0; font-weight: 700;"><i class="fas fa-search"></i> Generate Strategies for Symbol</h3>
+    </div>
+    <div class="card-body">
+        <form method="GET" action="/strategy" id="strategy-form">
+            <div class="row g-3 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label">Asset Type</label>
+                    <select class="form-select" name="asset_type" id="asset-type">
+                        <option value="stock" {% if asset_type == "stock" or not asset_type %}selected{% endif %}>Stock</option>
+                        <option value="crypto" {% if asset_type == "crypto" %}selected{% endif %}>Crypto</option>
+                        <option value="commodity" {% if asset_type == "commodity" %}selected{% endif %}>Commodity</option>
+                        <option value="etf" {% if asset_type == "etf" %}selected{% endif %}>ETF</option>
+                    </select>
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Symbol</label>
+                    <input type="text" class="form-control" name="symbol" id="strategy-symbol" 
+                           value="{{ symbol or '' }}" placeholder="e.g., AAPL, TSLA, BTC" required>
+                </div>
+                <div class="col-md-3">
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-magic"></i> Generate Strategies
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Generated Strategies -->
+{% if has_analysis and strategies %}
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #8b5cf6 0%, #6366f1 100%); color: white; border: none;">
+        <h3 style="margin: 0; font-weight: 700;">
+            <i class="fas fa-project-diagram"></i> Auto-Generated Strategies for {{ symbol }}
+        </h3>
+        <p style="margin: 0.5rem 0 0 0; font-size: 0.875rem; opacity: 0.9;">
+            <i class="fas fa-info-circle"></i> Strategies ranked by confidence score. Current Price: ${{ "%.2f"|format(current_price) }} | Recommendation: {{ recommendation.action if recommendation else 'HOLD' }}
+        </p>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            {% for strategy in strategies %}
+            <div class="col-md-6">
+                <div style="background: var(--bg-secondary); border: 2px solid {% if strategy.confidence >= 75 %}var(--success){% elif strategy.confidence >= 60 %}var(--warning){% else %}var(--border){% endif %}; border-radius: var(--radius); padding: 1.5rem; height: 100%;">
+                    <!-- Strategy Header -->
+                    <div class="d-flex justify-content-between align-items-start mb-3">
+                        <div>
+                            <h4 style="color: var(--text-primary); font-weight: 700; margin: 0;">
+                                <i class="fas fa-{% if strategy.strategy_type == 'Momentum' %}rocket{% elif strategy.strategy_type == 'Mean Reversion' %}exchange-alt{% elif strategy.strategy_type == 'Breakout' %}arrow-up{% else %}chart-line{% endif %}"></i>
+                                {{ strategy.strategy_name }}
+                            </h4>
+                            <span class="badge" style="background: {% if strategy.strategy_type == 'Momentum' %}var(--success){% elif strategy.strategy_type == 'Mean Reversion' %}var(--info){% elif strategy.strategy_type == 'Breakout' %}var(--warning){% else %}var(--primary){% endif %}; margin-top: 0.5rem;">
+                                {{ strategy.strategy_type }}
+                            </span>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.875rem; color: var(--text-secondary);">Confidence</div>
+                            <div style="font-size: 1.5rem; font-weight: 700; color: {% if strategy.confidence >= 75 %}var(--success){% elif strategy.confidence >= 60 %}var(--warning){% else %}var(--text-primary){% endif %};">
+                                {{ "%.0f"|format(strategy.confidence) }}%
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Description -->
+                    <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 1.5rem;">
+                        {{ strategy.description }}
+                    </p>
+                    
+                    <!-- Entry Conditions -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <h6 style="color: var(--success); font-weight: 600; margin-bottom: 0.75rem;">
+                            <i class="fas fa-arrow-circle-down"></i> Entry Conditions
+                        </h6>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            {% for condition in strategy.entry_conditions %}
+                            <li style="background: rgba(16, 185, 129, 0.1); border-left: 3px solid var(--success); border-radius: var(--radius-sm); padding: 0.5rem; margin-bottom: 0.5rem; font-size: 0.875rem;">
+                                <i class="fas fa-check-circle" style="color: var(--success);"></i> {{ condition.description }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    
+                    <!-- Exit Conditions -->
+                    <div style="margin-bottom: 1.5rem;">
+                        <h6 style="color: var(--danger); font-weight: 600; margin-bottom: 0.75rem;">
+                            <i class="fas fa-arrow-circle-up"></i> Exit Conditions
+                        </h6>
+                        <ul style="list-style: none; padding: 0; margin: 0;">
+                            {% for condition in strategy.exit_conditions %}
+                            <li style="background: rgba(239, 68, 68, 0.1); border-left: 3px solid var(--danger); border-radius: var(--radius-sm); padding: 0.5rem; margin-bottom: 0.5rem; font-size: 0.875rem;">
+                                <i class="fas fa-times-circle" style="color: var(--danger);"></i> {{ condition.description }}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    
+                    <!-- Price Levels -->
+                    <div style="background: rgba(109, 91, 255, 0.1); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem;">
+                        <div class="row text-center">
+                            <div class="col-4">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Stop Loss</div>
+                                <div style="font-weight: 700; color: var(--danger);">${{ "%.2f"|format(strategy.stop_loss) }}</div>
+                            </div>
+                            <div class="col-4">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Take Profit</div>
+                                <div style="font-weight: 700; color: var(--success);">${{ "%.2f"|format(strategy.take_profit) }}</div>
+                            </div>
+                            <div class="col-4">
+                                <div style="font-size: 0.75rem; color: var(--text-secondary); margin-bottom: 0.25rem;">Risk:Reward</div>
+                                <div style="font-weight: 700; color: var(--primary);">{{ "%.2f"|format(strategy.risk_reward) }}:1</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Strategy Info -->
+                    <div style="border-top: 1px solid var(--border); padding-top: 1rem;">
+                        <div class="row">
+                            <div class="col-6">
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">Holding Period</div>
+                                <div style="font-weight: 600; color: var(--text-primary);">{{ strategy.holding_period }}</div>
+                            </div>
+                            <div class="col-6">
+                                <div style="font-size: 0.8rem; color: var(--text-secondary);">Risk Level</div>
+                                <div style="font-weight: 600; color: {% if strategy.risk_level == 'Low' %}var(--success){% elif strategy.risk_level == 'Medium' %}var(--warning){% else %}var(--danger){% endif %};">
+                                    {{ strategy.risk_level }}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    {% if strategy.backtest_ready %}
+                    <div style="margin-top: 1rem;">
+                        <button class="btn btn-sm btn-outline-primary w-100" onclick="backtestStrategy('{{ strategy.strategy_name }}', '{{ strategy.strategy_type }}', {{ strategy.confidence }})">
+                            <i class="fas fa-play"></i> Backtest This Strategy
+                        </button>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+{% elif symbol and not has_analysis %}
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="alert alert-warning">
+            <i class="fas fa-exclamation-triangle"></i> Could not generate strategies for {{ symbol }}. Please check the symbol and try again.
+            {% if error %}
+            <br><strong>Error:</strong> {{ error }}
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% else %}
+<div class="card mb-4">
+    <div class="card-body">
+        <div class="text-center py-5">
+            <i class="fas fa-robot" style="font-size: 4rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+            <h4 style="color: var(--text-primary); margin-bottom: 1rem;">Enter a Symbol to Generate Strategies</h4>
+            <p style="color: var(--text-secondary);">
+                The AI will analyze the stock and automatically generate multiple trading strategies<br>
+                based on current market conditions, technical indicators, and fundamentals.
+            </p>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<script>
+function backtestStrategy(strategyName, strategyType, confidence) {
+    alert('Backtesting feature for "' + strategyName + '" will be available soon!\n\nStrategy Type: ' + strategyType + '\nConfidence: ' + confidence + '%');
+}
+</script>
+
+{% endblock %}

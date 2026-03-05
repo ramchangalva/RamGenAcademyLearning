@@ -1,0 +1,343 @@
+{% extends "base.html" %}
+
+{% block title %}Trade Journal - {{ app_name }}{% endblock %}
+
+{% block page_title %}Trade Journal{% endblock %}
+
+{% block main_content %}
+<!-- Page Banner -->
+<div class="page-banner mb-4">
+    <div class="banner-content">
+        <h1 class="banner-title">
+            <i class="fas fa-book"></i> Trade Journal + AI Feedback
+        </h1>
+        <p class="banner-subtitle">Auto-log trades, get AI feedback on mistakes, and receive weekly improvement reports</p>
+    </div>
+</div>
+
+<!-- Add Trade -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 style="margin: 0; font-weight: 700;"><i class="fas fa-plus-circle"></i> Add Trade</h3>
+    </div>
+    <div class="card-body">
+        <form id="add-trade-form" onsubmit="saveTrade(event)">
+            <div class="row g-3">
+                <div class="col-md-2">
+                    <label class="form-label">Symbol</label>
+                    <input type="text" class="form-control" name="symbol" id="trade-symbol" required placeholder="e.g., AAPL">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Action</label>
+                    <select class="form-select" name="action" id="trade-action" required>
+                        <option value="BUY">BUY</option>
+                        <option value="SELL">SELL</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Entry Price</label>
+                    <input type="number" class="form-control" name="entry_price" id="trade-entry-price" step="0.01" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Exit Price</label>
+                    <input type="number" class="form-control" name="exit_price" id="trade-exit-price" step="0.01" placeholder="Optional">
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Quantity</label>
+                    <input type="number" class="form-control" name="quantity" id="trade-quantity" step="0.01" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Stop Loss</label>
+                    <input type="number" class="form-control" name="stop_loss" id="trade-stop-loss" step="0.01" placeholder="Optional">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Entry Date</label>
+                    <input type="datetime-local" class="form-control" name="entry_date" id="trade-entry-date">
+                </div>
+                <div class="col-md-6">
+                    <label class="form-label">Exit Date</label>
+                    <input type="datetime-local" class="form-control" name="exit_date" id="trade-exit-date">
+                </div>
+                <div class="col-md-12">
+                    <label class="form-label">Reason/Notes</label>
+                    <textarea class="form-control" name="reason" id="trade-reason" rows="2" placeholder="Why did you take this trade?"></textarea>
+                </div>
+                <div class="col-md-12">
+                    <button type="submit" class="btn btn-primary">
+                        <i class="fas fa-save"></i> Save Trade
+                    </button>
+                    <button type="button" class="btn btn-secondary" onclick="loadTrades()">
+                        <i class="fas fa-sync"></i> Refresh
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Trade History -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 style="margin: 0; font-weight: 700;"><i class="fas fa-history"></i> Trade History</h3>
+    </div>
+    <div class="card-body">
+        {% if statistics and statistics.total_trades %}
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <div style="background: var(--bg-secondary); border-radius: var(--radius); padding: 1rem; text-align: center;">
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Total Trades</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--primary);">{{ statistics.total_trades }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div style="background: var(--bg-secondary); border-radius: var(--radius); padding: 1rem; text-align: center;">
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Win Rate</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--success);">{{ "%.1f"|format(statistics.win_rate) }}%</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div style="background: var(--bg-secondary); border-radius: var(--radius); padding: 1rem; text-align: center;">
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Net P&L</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: {% if statistics.net_pnl >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                        ${{ "%.2f"|format(statistics.net_pnl) }}
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div style="background: var(--bg-secondary); border-radius: var(--radius); padding: 1rem; text-align: center;">
+                    <div style="font-size: 0.875rem; color: var(--text-secondary);">Wins / Losses</div>
+                    <div style="font-size: 1.5rem; font-weight: 700; color: var(--text-primary);">
+                        {{ statistics.wins }} / {{ statistics.losses }}
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+        
+        <div id="trade-history">
+            {% if trades %}
+            <div class="table-responsive">
+                <table class="table table-dark table-hover">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Symbol</th>
+                            <th>Action</th>
+                            <th>Entry</th>
+                            <th>Exit</th>
+                            <th>Quantity</th>
+                            <th>P&L</th>
+                            <th>Result</th>
+                            <th>Reason</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for trade in trades|reverse %}
+                        <tr>
+                            <td>{{ trade.entry_date[:10] if trade.entry_date else 'N/A' }}</td>
+                            <td><strong>{{ trade.symbol }}</strong></td>
+                            <td>
+                                <span class="badge {% if trade.action == 'BUY' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ trade.action }}
+                                </span>
+                            </td>
+                            <td>${{ "%.2f"|format(trade.entry_price) }}</td>
+                            <td>${{ "%.2f"|format(trade.exit_price) if trade.exit_price else 'Open' }}</td>
+                            <td>{{ trade.shares }}</td>
+                            <td class="{% if trade.profit_loss and trade.profit_loss >= 0 %}text-success{% elif trade.profit_loss and trade.profit_loss < 0 %}text-danger{% endif %}">
+                                {% if trade.profit_loss is not none %}
+                                ${{ "%.2f"|format(trade.profit_loss) }}
+                                {% else %}
+                                -
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if trade.result %}
+                                <span class="badge {% if trade.result == 'WIN' %}bg-success{% elif trade.result == 'LOSS' %}bg-danger{% else %}bg-secondary{% endif %}">
+                                    {{ trade.result }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-warning">Open</span>
+                                {% endif %}
+                            </td>
+                            <td style="font-size: 0.875rem;">{{ trade.reason[:50] if trade.reason else '-' }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="text-center py-5">
+                <i class="fas fa-book" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <p style="color: var(--text-secondary);">No trades logged yet. Add your first trade above.</p>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- AI Feedback -->
+<div class="card">
+    <div class="card-header">
+        <h3 style="margin: 0; font-weight: 700;"><i class="fas fa-robot"></i> AI Feedback & Weekly Report</h3>
+    </div>
+    <div class="card-body">
+        <div id="ai-feedback">
+            {% if ai_feedback %}
+            <div class="row mb-3">
+                <div class="col-md-12">
+                    <h5 style="color: var(--primary); font-weight: 600; margin-bottom: 1rem;">
+                        <i class="fas fa-chart-line"></i> Weekly Performance Report
+                    </h5>
+                    <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-radius: var(--radius); padding: 1.25rem; white-space: pre-line; font-family: monospace;">
+                        {{ ai_feedback.weekly_report }}
+                    </div>
+                </div>
+            </div>
+            
+            {% if ai_feedback.mistakes %}
+            <div class="row mb-3">
+                <div class="col-md-6">
+                    <h5 style="color: var(--danger); font-weight: 600; margin-bottom: 1rem;">
+                        <i class="fas fa-exclamation-triangle"></i> Areas for Improvement
+                    </h5>
+                    <ul style="list-style: none; padding: 0;">
+                        {% for mistake in ai_feedback.mistakes %}
+                        <li style="background: var(--bg-secondary); border-left: 4px solid var(--danger); border-radius: var(--radius); padding: 0.75rem; margin-bottom: 0.5rem;">
+                            <i class="fas fa-times-circle" style="color: var(--danger);"></i> {{ mistake }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+                <div class="col-md-6">
+                    <h5 style="color: var(--success); font-weight: 600; margin-bottom: 1rem;">
+                        <i class="fas fa-check-circle"></i> Strengths
+                    </h5>
+                    <ul style="list-style: none; padding: 0;">
+                        {% for strength in ai_feedback.strengths %}
+                        <li style="background: var(--bg-secondary); border-left: 4px solid var(--success); border-radius: var(--radius); padding: 0.75rem; margin-bottom: 0.5rem;">
+                            <i class="fas fa-check-circle" style="color: var(--success);"></i> {{ strength }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if ai_feedback.recommendations %}
+            <div class="row">
+                <div class="col-md-12">
+                    <h5 style="color: var(--info); font-weight: 600; margin-bottom: 1rem;">
+                        <i class="fas fa-lightbulb"></i> AI Recommendations
+                    </h5>
+                    <ul style="list-style: none; padding: 0;">
+                        {% for rec in ai_feedback.recommendations %}
+                        <li style="background: var(--bg-secondary); border-left: 4px solid var(--info); border-radius: var(--radius); padding: 0.75rem; margin-bottom: 0.5rem;">
+                            <i class="fas fa-lightbulb" style="color: var(--info);"></i> {{ rec }}
+                        </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% if ai_feedback.metrics %}
+            <div style="margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border);">
+                <h5 style="color: var(--text-primary); font-weight: 600; margin-bottom: 1rem;">Performance Metrics</h5>
+                <div class="row">
+                    <div class="col-md-3">
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Win Rate</div>
+                        <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary);">{{ "%.1f"|format(ai_feedback.metrics.win_rate) }}%</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Avg Win</div>
+                        <div style="font-size: 1.25rem; font-weight: 700; color: var(--success);">${{ "%.2f"|format(ai_feedback.metrics.avg_win) }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Avg Loss</div>
+                        <div style="font-size: 1.25rem; font-weight: 700; color: var(--danger);">${{ "%.2f"|format(ai_feedback.metrics.avg_loss) }}</div>
+                    </div>
+                    <div class="col-md-3">
+                        <div style="font-size: 0.875rem; color: var(--text-secondary);">Profit Factor</div>
+                        <div style="font-size: 1.25rem; font-weight: 700; color: var(--primary);">{{ "%.2f"|format(ai_feedback.metrics.profit_factor) }}</div>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> AI feedback will be available after logging trades.
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<script>
+async function saveTrade(event) {
+    event.preventDefault();
+    
+    const form = event.target;
+    const formData = new FormData(form);
+    
+    // Convert FormData to JSON
+    const tradeData = {};
+    for (let [key, value] of formData.entries()) {
+        if (value) {
+            tradeData[key] = value;
+        }
+    }
+    
+    // Convert dates to ISO format
+    if (tradeData.entry_date) {
+        tradeData.entry_date = new Date(tradeData.entry_date).toISOString();
+    }
+    if (tradeData.exit_date) {
+        tradeData.exit_date = new Date(tradeData.exit_date).toISOString();
+    }
+    
+    try {
+        const response = await fetch('/api/trade-journal/add', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/x-www-form-urlencoded',
+            },
+            body: new URLSearchParams(tradeData)
+        });
+        
+        const data = await response.json();
+        
+        if (data.success) {
+            alert('Trade saved successfully!');
+            form.reset();
+            loadTrades();
+        } else {
+            alert('Error saving trade: ' + (data.error || 'Unknown error'));
+        }
+    } catch (error) {
+        alert('Error saving trade: ' + error.message);
+    }
+}
+
+async function loadTrades() {
+    try {
+        const response = await fetch('/api/trade-journal/trades');
+        const data = await response.json();
+        
+        if (data.trades) {
+            // Reload page to show updated trades
+            window.location.reload();
+        }
+    } catch (error) {
+        console.error('Error loading trades:', error);
+    }
+}
+
+// Load trades on page load
+document.addEventListener('DOMContentLoaded', function() {
+    loadTrades();
+});
+</script>
+
+{% endblock %}

@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block title %}Alerts - {{ app_name }}{% endblock %}
+
+{% block page_title %}Alerts{% endblock %}
+
+{% block main_content %}
+<!-- Page Banner -->
+<div class="page-banner mb-4">
+    <div class="banner-content">
+        <h1 class="banner-title">
+            <i class="fas fa-bell"></i> Custom Alerts
+        </h1>
+        <p class="banner-subtitle">Create alerts for Buy/Sell signals, stop loss hits, target reached, and indicator crossovers</p>
+    </div>
+</div>
+
+<!-- Create Alert -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 style="margin: 0; font-weight: 700;"><i class="fas fa-plus-circle"></i> Create New Alert</h3>
+    </div>
+    <div class="card-body">
+        <form id="create-alert-form">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label class="form-label">Symbol</label>
+                    <input type="text" class="form-control" name="symbol" placeholder="e.g., AAPL" required>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Alert Type</label>
+                    <select class="form-select" name="alert_type" required>
+                        <option value="buy_signal">Buy Signal</option>
+                        <option value="sell_signal">Sell Signal</option>
+                        <option value="stop_loss">Stop Loss Hit</option>
+                        <option value="target">Target Reached</option>
+                        <option value="crossover">Indicator Crossover</option>
+                    </select>
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">Price Target</label>
+                    <input type="number" class="form-control" name="price_target" step="0.01">
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-bell"></i> Create Alert
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Active Alerts -->
+<div class="card">
+    <div class="card-header">
+        <h3 style="margin: 0; font-weight: 700;"><i class="fas fa-list"></i> Active Alerts</h3>
+    </div>
+    <div class="card-body">
+        <div id="active-alerts">
+            <div class="text-center py-5">
+                <i class="fas fa-bell" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <p style="color: var(--text-secondary);">No active alerts. Create your first alert above.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

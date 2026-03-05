@@ -1,0 +1,90 @@
+{% extends "base.html" %}
+
+{% block title %}Risk Management - {{ app_name }}{% endblock %}
+
+{% block page_title %}Risk Management{% endblock %}
+
+{% block main_content %}
+<!-- Page Banner -->
+<div class="page-banner mb-4">
+    <div class="banner-content">
+        <h1 class="banner-title">
+            <i class="fas fa-calculator"></i> Risk Management Dashboard
+        </h1>
+        <p class="banner-subtitle">Calculate risk per trade, position sizing, and get AI risk tips</p>
+    </div>
+</div>
+
+<!-- Risk Calculator -->
+<div class="row mb-4">
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 style="margin: 0; font-weight: 700;"><i class="fas fa-calculator"></i> Risk Per Trade Calculator</h3>
+            </div>
+            <div class="card-body">
+                <div class="mb-3">
+                    <label class="form-label">Account Balance ($)</label>
+                    <input type="number" class="form-control" id="account_balance" value="10000" step="0.01">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Risk Percentage (%)</label>
+                    <input type="number" class="form-control" id="risk_percent" value="2" step="0.1" min="0.1" max="10">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Entry Price ($)</label>
+                    <input type="number" class="form-control" id="entry_price" value="100" step="0.01">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Stop Loss Price ($)</label>
+                    <input type="number" class="form-control" id="stop_loss" value="95" step="0.01">
+                </div>
+                <button class="btn btn-primary w-100" onclick="calculateRisk()">
+                    <i class="fas fa-calculator"></i> Calculate
+                </button>
+                <div id="risk-result" class="mt-4"></div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="card h-100">
+            <div class="card-header">
+                <h3 style="margin: 0; font-weight: 700;"><i class="fas fa-lightbulb"></i> AI Risk Tips</h3>
+            </div>
+            <div class="card-body">
+                <div id="ai-tips">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> Enter trade details to get AI-powered risk management tips.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+function calculateRisk() {
+    const balance = parseFloat(document.getElementById('account_balance').value);
+    const riskPercent = parseFloat(document.getElementById('risk_percent').value);
+    const entry = parseFloat(document.getElementById('entry_price').value);
+    const stopLoss = parseFloat(document.getElementById('stop_loss').value);
+    
+    const riskAmount = balance * (riskPercent / 100);
+    const riskPerShare = Math.abs(entry - stopLoss);
+    const positionSize = riskAmount / riskPerShare;
+    const totalCost = positionSize * entry;
+    
+    const result = `
+        <div class="alert alert-success">
+            <h5><i class="fas fa-check-circle"></i> Risk Calculation Results</h5>
+            <p><strong>Risk Amount:</strong> $${riskAmount.toFixed(2)}</p>
+            <p><strong>Position Size:</strong> ${positionSize.toFixed(2)} shares</p>
+            <p><strong>Total Cost:</strong> $${totalCost.toFixed(2)}</p>
+            <p><strong>Risk Per Share:</strong> $${riskPerShare.toFixed(2)}</p>
+        </div>
+    `;
+    document.getElementById('risk-result').innerHTML = result;
+}
+</script>
+
+{% endblock %}

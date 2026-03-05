@@ -1,0 +1,155 @@
+{% extends "base.html" %}
+
+{% block title %}Market Scanner - {{ app_name }}{% endblock %}
+
+{% block page_title %}Market Scanner{% endblock %}
+
+{% block main_content %}
+<!-- Page Banner -->
+<div class="page-banner mb-4">
+    <div class="banner-content">
+        <h1 class="banner-title">
+            <i class="fas fa-search"></i> AI Market Scanner
+        </h1>
+        <p class="banner-subtitle">Scan thousands of assets for breakouts, reversals, volume spikes, and trend changes</p>
+    </div>
+</div>
+
+<!-- Scanner Filters -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h3 style="margin: 0; font-weight: 700;"><i class="fas fa-filter"></i> Scanner Filters</h3>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <label class="form-label">Timeframe</label>
+                <select class="form-select" id="timeframe">
+                    <option value="intraday">Intraday</option>
+                    <option value="swing">Swing</option>
+                    <option value="longterm">Long-term</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Asset Type</label>
+                <select class="form-select" id="asset_type">
+                    <option value="all">All</option>
+                    <option value="stock">Stocks</option>
+                    <option value="crypto">Crypto</option>
+                    <option value="commodity">Commodities</option>
+                    <option value="etf">ETFs</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">Signal Type</label>
+                <select class="form-select" id="signal_type">
+                    <option value="all">All Signals</option>
+                    <option value="breakout">Breakouts</option>
+                    <option value="reversal">Reversals</option>
+                    <option value="volume">Volume Spikes</option>
+                    <option value="trend">Trend Changes</option>
+                </select>
+            </div>
+            <div class="col-md-3">
+                <label class="form-label">&nbsp;</label>
+                <button class="btn btn-primary w-100" onclick="startScan()">
+                    <i class="fas fa-play"></i> Start Scan
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Scan Results -->
+<div class="card">
+    <div class="card-header">
+        <h3 style="margin: 0; font-weight: 700;"><i class="fas fa-list"></i> Scan Results</h3>
+    </div>
+    <div class="card-body">
+        <div id="scan-results">
+            <div class="text-center py-5">
+                <i class="fas fa-search" style="font-size: 3rem; color: var(--text-muted); margin-bottom: 1rem;"></i>
+                <p style="color: var(--text-secondary);">Click "Start Scan" to begin scanning the market</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+async function startScan() {
+    const resultsDiv = document.getElementById('scan-results');
+    resultsDiv.innerHTML = '<div class="text-center py-5"><div class="spinner-border text-primary" role="status"></div><p class="mt-3">Scanning market...</p></div>';
+    
+    try {
+        const timeframe = document.getElementById('timeframe').value;
+        const assetType = document.getElementById('asset_type').value;
+        const signalType = document.getElementById('signal_type').value;
+        
+        const response = await fetch(`/api/market/scan?timeframe=${timeframe}&asset_type=${assetType}&signal_type=${signalType}`);
+        const data = await response.json();
+        
+        if (data.error) {
+            resultsDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Error: ${data.error}</div>`;
+            return;
+        }
+        
+        // Display results
+        let html = '<div class="row g-3">';
+        
+        // Breakouts
+        if (data.breakouts && data.breakouts.length > 0) {
+            html += '<div class="col-12"><h5 class="mb-3"><i class="fas fa-arrow-up text-success"></i> Breakouts</h5>';
+            html += '<div class="table-responsive"><table class="table table-dark table-hover"><thead><tr><th>Symbol</th><th>Type</th><th>Price</th><th>Confidence</th><th>Volume Ratio</th></tr></thead><tbody>';
+            data.breakouts.forEach(item => {
+                html += `<tr><td><strong>${item.symbol || 'N/A'}</strong></td><td>${item.type || 'N/A'}</td><td>$${item.price || 'N/A'}</td><td>${item.confidence || 0}%</td><td>${item.volume_ratio || 'N/A'}x</td></tr>`;
+            });
+            html += '</tbody></table></div></div>';
+        }
+        
+        // Reversals
+        if (data.reversals && data.reversals.length > 0) {
+            html += '<div class="col-12"><h5 class="mb-3"><i class="fas fa-exchange-alt text-warning"></i> Reversals</h5>';
+            html += '<div class="table-responsive"><table class="table table-dark table-hover"><thead><tr><th>Symbol</th><th>Type</th><th>Indicator</th><th>Value</th><th>Confidence</th></tr></thead><tbody>';
+            data.reversals.forEach(item => {
+                html += `<tr><td><strong>${item.symbol || 'N/A'}</strong></td><td>${item.type || 'N/A'}</td><td>${item.indicator || 'N/A'}</td><td>${item.value || 'N/A'}</td><td>${item.confidence || 0}%</td></tr>`;
+            });
+            html += '</tbody></table></div></div>';
+        }
+        
+        // Volume Spikes
+        if (data.volume_spikes && data.volume_spikes.length > 0) {
+            html += '<div class="col-12"><h5 class="mb-3"><i class="fas fa-chart-line text-info"></i> Volume Spikes</h5>';
+            html += '<div class="table-responsive"><table class="table table-dark table-hover"><thead><tr><th>Symbol</th><th>Volume Ratio</th><th>Price Change</th><th>Direction</th><th>Confidence</th></tr></thead><tbody>';
+            data.volume_spikes.forEach(item => {
+                const directionClass = item.direction === 'UP' ? 'text-success' : 'text-danger';
+                html += `<tr><td><strong>${item.symbol || 'N/A'}</strong></td><td>${item.volume_ratio || 'N/A'}x</td><td>${item.price_change || 0}%</td><td class="${directionClass}">${item.direction || 'N/A'}</td><td>${item.confidence || 0}%</td></tr>`;
+            });
+            html += '</tbody></table></div></div>';
+        }
+        
+        // Trend Changes
+        if (data.trend_changes && data.trend_changes.length > 0) {
+            html += '<div class="col-12"><h5 class="mb-3"><i class="fas fa-trending-up text-primary"></i> Trend Changes</h5>';
+            html += '<div class="table-responsive"><table class="table table-dark table-hover"><thead><tr><th>Symbol</th><th>Type</th><th>Short MA</th><th>Long MA</th><th>Confidence</th></tr></thead><tbody>';
+            data.trend_changes.forEach(item => {
+                html += `<tr><td><strong>${item.symbol || 'N/A'}</strong></td><td>${item.type || 'N/A'}</td><td>$${item.short_ma || 'N/A'}</td><td>$${item.long_ma || 'N/A'}</td><td>${item.confidence || 0}%</td></tr>`;
+            });
+            html += '</tbody></table></div></div>';
+        }
+        
+        html += '</div>';
+        
+        if (!data.breakouts?.length && !data.reversals?.length && !data.volume_spikes?.length && !data.trend_changes?.length) {
+            html = '<div class="alert alert-info"><i class="fas fa-info-circle"></i> No signals found for the selected criteria. Try adjusting your filters.</div>';
+        }
+        
+        resultsDiv.innerHTML = html;
+        
+    } catch (error) {
+        console.error('Error scanning market:', error);
+        resultsDiv.innerHTML = `<div class="alert alert-danger"><i class="fas fa-exclamation-triangle"></i> Error: ${error.message}</div>`;
+    }
+}
+</script>
+
+{% endblock %}

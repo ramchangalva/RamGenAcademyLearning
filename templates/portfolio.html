@@ -1,0 +1,285 @@
+{% extends "base.html" %}
+
+{% block title %}Portfolio Management - {{ app_name }}{% endblock %}
+
+{% block page_title %}My Portfolio{% endblock %}
+
+{% block main_content %}
+<!-- Financial Disclaimer -->
+<div class="alert alert-warning mb-4" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); border-left: 4px solid #f59e0b;">
+    <strong><i class="fas fa-exclamation-triangle"></i> Important Disclaimer:</strong>
+    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+        This application provides analysis and recommendations for informational purposes only. 
+        <strong>This is NOT financial advice.</strong> All trading and investment decisions carry risk. 
+        Past performance does not guarantee future results. Always conduct your own research and 
+        consult with a qualified financial advisor before making investment decisions. 
+        The authors and operators of this application are not responsible for any financial losses.
+    </p>
+</div>
+
+<!-- Portfolio Summary -->
+<div class="card mb-4">
+    <div class="card-header" style="background: linear-gradient(135deg, #6D5BFF, #C05CFF, #FF5C93); color: white; border: none;">
+        <h4 style="margin: 0; font-weight: 700;"><i class="fas fa-wallet"></i> Portfolio Summary</h4>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            <div class="col-md-3">
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-left: 4px solid var(--primary); border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">Total Value</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--primary);">${{ "%.2f"|format(portfolio.total_value) }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-left: 4px solid var(--info); border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">Total Cost</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--info);">${{ "%.2f"|format(portfolio.total_cost) }}</div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-left: 4px solid {% if portfolio.total_pnl >= 0 %}var(--success){% else %}var(--danger){% endif %}; border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">Total P&L</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: {% if portfolio.total_pnl >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                        ${{ "%.2f"|format(portfolio.total_pnl) }}
+                    </div>
+                    <div style="font-size: 0.875rem; color: {% if portfolio.total_pnl >= 0 %}var(--success){% else %}var(--danger){% endif %};">
+                        {{ "+" if portfolio.total_pnl >= 0 else "" }}{{ "%.2f"|format(portfolio.total_pnl_percent) }}%
+                    </div>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border); border-left: 4px solid var(--warning); border-radius: var(--radius); padding: 1.5rem; text-align: center;">
+                    <div style="color: var(--text-secondary); font-size: 0.875rem; margin-bottom: 0.5rem;">Holdings</div>
+                    <div style="font-size: 2rem; font-weight: 700; color: var(--warning);">{{ portfolio.holdings|length }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Add Holding Form -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h4 style="margin: 0; font-weight: 700; color: var(--text-primary);"><i class="fas fa-plus-circle"></i> Add Holding</h4>
+    </div>
+    <div class="card-body">
+        <form id="add-holding-form">
+            <div class="row g-3">
+                <div class="col-md-3">
+                    <label for="holding-symbol" class="form-label">Symbol</label>
+                    <input type="text" class="form-control" id="holding-symbol" required>
+                </div>
+                <div class="col-md-3">
+                    <label for="holding-type" class="form-label">Asset Type</label>
+                    <select class="form-select" id="holding-type" required>
+                        <option value="stock">Stock</option>
+                        <option value="crypto">Crypto</option>
+                        <option value="commodity">Commodity</option>
+                        <option value="etf">ETF</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label for="holding-quantity" class="form-label">Quantity</label>
+                    <input type="number" class="form-control" id="holding-quantity" step="0.0001" required>
+                </div>
+                <div class="col-md-2">
+                    <label for="holding-price" class="form-label">Purchase Price</label>
+                    <input type="number" class="form-control" id="holding-price" step="0.01" required>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">&nbsp;</label>
+                    <button type="submit" class="btn btn-primary w-100">
+                        <i class="fas fa-plus"></i> Add
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Holdings Table -->
+<div class="card mb-4">
+    <div class="card-header">
+        <h4 style="margin: 0; font-weight: 700; color: var(--text-primary);"><i class="fas fa-list"></i> Holdings</h4>
+    </div>
+    <div class="card-body">
+        {% if portfolio.holdings %}
+        <div class="table-responsive">
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Symbol</th>
+                        <th>Type</th>
+                        <th>Quantity</th>
+                        <th>Purchase Price</th>
+                        <th>Current Price</th>
+                        <th>Value</th>
+                        <th>P&L</th>
+                        <th>P&L %</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for holding in portfolio.holdings %}
+                    <tr>
+                        <td><strong>{{ holding.symbol }}</strong></td>
+                        <td><span class="badge bg-info">{{ holding.asset_type|upper }}</span></td>
+                        <td>{{ "%.4f"|format(holding.quantity) }}</td>
+                        <td>${{ "%.2f"|format(holding.purchase_price) }}</td>
+                        <td>${{ "%.2f"|format(holding.current_price) }}</td>
+                        <td>${{ "%.2f"|format(holding.quantity * holding.current_price) }}</td>
+                        <td class="{% if (holding.current_price - holding.purchase_price) * holding.quantity >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            ${{ "%.2f"|format((holding.current_price - holding.purchase_price) * holding.quantity) }}
+                        </td>
+                        <td class="{% if (holding.current_price - holding.purchase_price) / holding.purchase_price * 100 >= 0 %}text-success{% else %}text-danger{% endif %}">
+                            {{ "+" if (holding.current_price - holding.purchase_price) / holding.purchase_price * 100 >= 0 else "" }}{{ "%.2f"|format((holding.current_price - holding.purchase_price) / holding.purchase_price * 100) }}%
+                        </td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" onclick="removeHolding('{{ holding.symbol }}', '{{ holding.asset_type }}')">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+        {% else %}
+        <p class="text-muted text-center">No holdings in portfolio. Add holdings above to track your investments.</p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Performance Metrics -->
+{% if performance %}
+<div class="card mb-4">
+    <div class="card-header">
+        <h4 style="margin: 0; font-weight: 700; color: var(--text-primary);"><i class="fas fa-chart-line"></i> Performance</h4>
+    </div>
+    <div class="card-body">
+        <div class="row g-3">
+            {% if performance.best_performer %}
+            <div class="col-md-6">
+                <div class="alert alert-success">
+                    <strong><i class="fas fa-arrow-up"></i> Best Performer:</strong> 
+                    {{ performance.best_performer.symbol }} ({{ "%.2f"|format(performance.best_performer.pnl_percent) }}%)
+                </div>
+            </div>
+            {% endif %}
+            {% if performance.worst_performer %}
+            <div class="col-md-6">
+                <div class="alert alert-danger">
+                    <strong><i class="fas fa-arrow-down"></i> Worst Performer:</strong> 
+                    {{ performance.worst_performer.symbol }} ({{ "%.2f"|format(performance.worst_performer.pnl_percent) }}%)
+                </div>
+            </div>
+            {% endif %}
+        </div>
+        {% if performance.asset_allocation %}
+        <div class="mt-3">
+            <h5>Asset Allocation</h5>
+            <div class="row g-2">
+                {% for asset_type, percentage in performance.asset_allocation.items() %}
+                <div class="col-md-3">
+                    <div style="background: var(--bg-secondary); padding: 1rem; border-radius: var(--radius);">
+                        <strong>{{ asset_type|upper }}</strong>: {{ "%.1f"|format(percentage) }}%
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{% endblock %}
+
+{% block extra_js %}
+<script>
+    document.getElementById('add-holding-form').addEventListener('submit', async function(e) {
+        e.preventDefault();
+        
+        const symbol = document.getElementById('holding-symbol').value.trim().toUpperCase();
+        const assetType = document.getElementById('holding-type').value;
+        const quantity = parseFloat(document.getElementById('holding-quantity').value);
+        const purchasePrice = parseFloat(document.getElementById('holding-price').value);
+        
+        if (!symbol || !quantity || !purchasePrice) {
+            alert('Please fill in all required fields');
+            return;
+        }
+        
+        try {
+            // Get current price
+            let currentPrice = purchasePrice;
+            try {
+                const response = await fetch(`/api/asset/${symbol}/info?asset_type=${assetType}`);
+                if (response.ok) {
+                    const assetData = await response.json();
+                    if (assetData.current_price) {
+                        currentPrice = assetData.current_price;
+                    }
+                }
+            } catch (priceError) {
+                // Continue with purchase price if fetch fails
+            }
+            
+            // Add holding
+            const addResponse = await fetch('/api/portfolio/add', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    symbol: symbol,
+                    asset_type: assetType,
+                    quantity: quantity,
+                    purchase_price: purchasePrice,
+                    current_price: currentPrice
+                })
+            });
+            
+            if (!addResponse.ok) {
+                const errorData = await addResponse.json();
+                throw new Error(errorData.error || 'Failed to add holding');
+            }
+            
+            const data = await addResponse.json();
+            if (data.success) {
+                alert('Holding added successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            alert('Error adding holding: ' + error.message);
+        }
+    });
+    
+    async function removeHolding(symbol, assetType) {
+        if (!confirm(`Remove ${symbol} from portfolio?`)) {
+            return;
+        }
+        
+        try {
+            const response = await fetch('/api/portfolio/remove', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    symbol: symbol,
+                    asset_type: assetType
+                })
+            });
+            
+            const data = await response.json();
+            if (data.success) {
+                alert('Holding removed successfully!');
+                location.reload();
+            } else {
+                alert('Error: ' + (data.error || 'Unknown error'));
+            }
+        } catch (error) {
+            alert('Error removing holding: ' + error.message);
+        }
+    }
+</script>
+{% endblock %}

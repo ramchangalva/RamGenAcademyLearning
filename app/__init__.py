@@ -1,0 +1,3 @@
+"""
+TradePulse AI Application Package
+"""

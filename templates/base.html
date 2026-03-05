@@ -1,0 +1,1133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}TradePulse AI - Intelligent Trading Analysis{% endblock %}</title>
+    <script src="https://cdn.plot.ly/plotly-2.26.0.min.js"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            /* Premium Design Tokens */
+            --primary-gradient: linear-gradient(135deg, #6D5BFF 0%, #C05CFF 50%, #FF5C93 100%);
+            --primary: #6D5BFF;
+            --primary-dark: #5A4AE6;
+            --primary-light: #8B7AFF;
+            
+            --bg-sidebar: #0F1419;
+            --bg-main: #1A1F2E;
+            --bg-card: #252A3A;
+            --bg-secondary: #2D3445;
+            
+            --text-primary: #E8EAED;
+            --text-secondary: #B8BDC6;
+            --text-muted: #8B9199;
+            --text-light: #FFFFFF;
+            
+            --border: rgba(148, 163, 184, 0.25);
+            --border-light: rgba(148, 163, 184, 0.15);
+            
+            --success: #10B981;
+            --success-dark: #059669;
+            --success-light: #34D399;
+            --danger: #EF4444;
+            --danger-dark: #DC2626;
+            --danger-light: #F87171;
+            --warning: #F59E0B;
+            --warning-dark: #D97706;
+            --warning-light: #FBBF24;
+            --info: #3B82F6;
+            --info-dark: #2563EB;
+            --info-light: #60A5FA;
+            
+            /* Consistent Spacing System */
+            --spacing-xs: 4px;
+            --spacing-sm: 8px;
+            --spacing-md: 12px;
+            --spacing-lg: 16px;
+            --spacing-xl: 24px;
+            --spacing-2xl: 32px;
+            
+            /* Consistent Border Radius */
+            --radius-sm: 8px;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            
+            /* Premium Shadows */
+            --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+            --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+            --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            --shadow-glow: 0 0 20px rgba(109, 91, 255, 0.15);
+        }
+
+        body {
+            font-family: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: var(--bg-main);
+            color: var(--text-primary);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            position: relative;
+            overflow-x: hidden;
+        }
+        
+        /* Premium Background: Soft Radial Gradients + Subtle Noise */
+        body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: 
+                radial-gradient(circle at 20% 30%, rgba(109, 91, 255, 0.08) 0%, transparent 50%),
+                radial-gradient(circle at 80% 70%, rgba(192, 92, 255, 0.06) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 92, 147, 0.04) 0%, transparent 60%),
+                var(--bg-main);
+            background-size: 100% 100%;
+            z-index: 0;
+            pointer-events: none;
+        }
+        
+        /* Subtle Noise Texture */
+        body::after {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                url("data:image/svg+xml,%3Csvg viewBox='0 0 400 400' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E");
+            opacity: 0.4;
+            z-index: 0;
+            pointer-events: none;
+        }
+
+        /* Layout */
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* Premium Sidebar */
+        .sidebar {
+            width: 280px;
+            background: var(--bg-sidebar);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            border-right: 1px solid rgba(148, 163, 184, 0.1);
+            box-shadow: 2px 0 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .sidebar-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            position: relative;
+        }
+
+        /* Custom Logo: Pulse Line + Candlestick + AI Node */
+        .logo {
+            width: 48px;
+            height: 48px;
+            background: var(--primary-gradient);
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            position: relative;
+            box-shadow: 0 4px 12px rgba(109, 91, 255, 0.3);
+            flex-shrink: 0;
+        }
+        
+        .logo svg {
+            width: 28px;
+            height: 28px;
+        }
+        
+        /* Pulse animation for logo */
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        
+        .logo .pulse-line {
+            animation: pulse 2s ease-in-out infinite;
+        }
+
+        .brand-name {
+            color: var(--text-light);
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+
+        .nav-section {
+            padding: var(--spacing-md) 0;
+        }
+        
+        /* Nav Separator */
+        .nav-section::before {
+            content: '';
+            display: block;
+            height: 1px;
+            background: rgba(148, 163, 184, 0.1);
+            margin: var(--spacing-sm) var(--spacing-lg);
+        }
+        
+        .nav-section:first-child::before {
+            display: none;
+        }
+
+        .nav-item {
+            padding: var(--spacing-md) var(--spacing-lg);
+            color: rgba(255, 255, 255, 0.65);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            font-size: 0.9375rem;
+            position: relative;
+            margin: 0 var(--spacing-sm);
+            border-radius: var(--radius-md);
+        }
+        
+        .nav-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 0;
+            background: var(--primary-gradient);
+            border-radius: 0 3px 3px 0;
+            transition: height 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .nav-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-light);
+            transform: translateX(4px);
+        }
+        
+        .nav-item:hover::before {
+            height: 60%;
+        }
+
+        .nav-item.active {
+            background: rgba(109, 91, 255, 0.15);
+            color: var(--text-light);
+            box-shadow: 0 2px 8px rgba(109, 91, 255, 0.2);
+        }
+        
+        .nav-item.active::before {
+            height: 70%;
+        }
+        
+        /* Active Pill Highlight */
+        .nav-item.active::after {
+            content: '';
+            position: absolute;
+            right: var(--spacing-md);
+            top: 50%;
+            transform: translateY(-50%);
+            width: 6px;
+            height: 6px;
+            background: var(--primary-gradient);
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(109, 91, 255, 0.6);
+        }
+
+        .nav-item i {
+            width: 20px;
+            text-align: center;
+            font-size: 1rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            margin-right: 300px;
+            background: var(--bg-main);
+            min-height: 100vh;
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Right Sidebar (Watchlist) */
+        .watchlist-sidebar {
+            width: 300px;
+            background: var(--bg-sidebar);
+            position: fixed;
+            right: 0;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+            border-left: 1px solid rgba(148, 163, 184, 0.1);
+            box-shadow: -2px 0 20px rgba(0, 0, 0, 0.1);
+        }
+        
+        .watchlist-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid rgba(148, 163, 184, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        
+        .watchlist-title {
+            color: var(--text-light);
+            font-size: 1.125rem;
+            font-weight: 700;
+            margin: 0;
+            letter-spacing: -0.02em;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .watchlist-content {
+            padding: var(--spacing-lg);
+        }
+        
+        .watchlist-add-form {
+            margin-bottom: var(--spacing-lg);
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-sm);
+        }
+        
+        .watchlist-input {
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            color: var(--text-light);
+            font-size: 0.875rem;
+            margin-bottom: var(--spacing-sm);
+        }
+        
+        .watchlist-input::placeholder {
+            color: rgba(255, 255, 255, 0.5);
+        }
+        
+        .watchlist-input:focus {
+            outline: none;
+            border-color: var(--primary);
+            background: rgba(255, 255, 255, 0.15);
+        }
+        
+        .watchlist-btn {
+            width: 100%;
+            background: var(--primary-gradient);
+            border: none;
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md);
+            color: white;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.25s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: var(--spacing-sm);
+        }
+        
+        .watchlist-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(109, 91, 255, 0.3);
+        }
+        
+        .watchlist-btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+            transform: none;
+        }
+        
+        .watchlist-item {
+            padding: var(--spacing-md);
+            color: rgba(255, 255, 255, 0.65);
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            font-weight: 500;
+            font-size: 0.9375rem;
+            position: relative;
+            margin: 0 var(--spacing-sm);
+            border-radius: var(--radius-md);
+            margin-bottom: var(--spacing-xs);
+            cursor: pointer;
+        }
+        
+        .watchlist-item:hover {
+            background: rgba(255, 255, 255, 0.06);
+            color: var(--text-light);
+        }
+        
+        .watchlist-item.active {
+            background: rgba(109, 91, 255, 0.15);
+            color: var(--text-light);
+            box-shadow: 0 2px 8px rgba(109, 91, 255, 0.2);
+        }
+        
+        .watchlist-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 3px;
+            height: 70%;
+            background: var(--primary-gradient);
+            border-radius: 0 3px 3px 0;
+        }
+        
+        .watchlist-item-remove {
+            background: transparent;
+            border: none;
+            color: rgba(255, 255, 255, 0.5);
+            cursor: pointer;
+            padding: var(--spacing-xs);
+            border-radius: var(--radius-sm);
+            transition: all 0.2s;
+            opacity: 0;
+        }
+        
+        .watchlist-item:hover .watchlist-item-remove {
+            opacity: 1;
+        }
+        
+        .watchlist-item-remove:hover {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--danger);
+        }
+        
+        .watchlist-empty {
+            text-align: center;
+            color: rgba(255, 255, 255, 0.5);
+            font-size: 0.875rem;
+            padding: var(--spacing-lg);
+        }
+        
+        .watchlist-refresh-btn {
+            background: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            color: rgba(255, 255, 255, 0.7);
+            cursor: pointer;
+            transition: all 0.2s;
+            font-size: 0.875rem;
+        }
+        
+        .watchlist-refresh-btn:hover {
+            background: rgba(255, 255, 255, 0.1);
+            color: var(--text-light);
+            border-color: var(--primary);
+        }
+
+        .top-header {
+            background: rgba(37, 42, 58, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid var(--border);
+            padding: var(--spacing-lg) var(--spacing-2xl);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            box-shadow: var(--shadow-sm);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .theme-toggle {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-sm) var(--spacing-md);
+            color: var(--text-primary);
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            font-size: 0.875rem;
+        }
+        
+        .theme-toggle:hover {
+            background: var(--primary);
+            color: white;
+            border-color: var(--primary);
+        }
+        
+        /* Light Mode Styles */
+        body.light-mode {
+            --bg-sidebar: #0F1419;
+            --bg-main: #F7F8FC;
+            --bg-card: #FFFFFF;
+            --bg-secondary: #F1F5F9;
+            --text-primary: #0F172A;
+            --text-secondary: #64748B;
+            --text-muted: #94A3B8;
+            --text-light: #FFFFFF;
+        }
+        
+        body.light-mode .top-header {
+            background: rgba(247, 248, 252, 0.95);
+        }
+        
+        body.light-mode .sidebar,
+        body.light-mode .watchlist-sidebar {
+            background: var(--bg-sidebar);
+        }
+        
+        body.light-mode .form-control,
+        body.light-mode .form-select {
+            background: var(--bg-card);
+            color: var(--text-primary);
+        }
+        
+        body.light-mode .form-control:focus,
+        body.light-mode .form-select:focus {
+            background: var(--bg-card);
+        }
+        
+        body.light-mode .card {
+            background: var(--bg-card);
+        }
+        
+        body.light-mode .card-header {
+            background: var(--bg-secondary);
+        }
+        }
+
+        .page-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            margin: 0;
+            letter-spacing: -0.02em;
+        }
+        
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-md);
+        }
+
+        .content-area {
+            padding: var(--spacing-2xl);
+            position: relative;
+            z-index: 1;
+        }
+        
+        /* Premium Cards */
+        .card {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            border-radius: var(--radius-lg);
+            box-shadow: var(--shadow-sm);
+            margin-bottom: var(--spacing-lg);
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            position: relative;
+            z-index: 1;
+        }
+        
+        .card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--primary-gradient);
+            border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+            z-index: 1;
+        }
+
+        .card:hover {
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-2px);
+        }
+
+        .card-header {
+            padding: var(--spacing-lg);
+            border-bottom: 1px solid var(--border-light);
+            background: var(--bg-secondary);
+        }
+        
+        .card-header h4 {
+            margin: 0;
+            font-weight: 700;
+            color: var(--text-primary);
+            font-size: 1.125rem;
+            letter-spacing: -0.01em;
+        }
+
+        .card-body {
+            padding: var(--spacing-lg);
+        }
+
+        /* Premium Buttons */
+        .btn {
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md) var(--spacing-lg);
+            font-weight: 600;
+            font-size: 0.9375rem;
+            border: none;
+            cursor: pointer;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            display: inline-flex;
+            align-items: center;
+            gap: var(--spacing-sm);
+            box-shadow: var(--shadow-sm);
+        }
+
+        .btn-primary {
+            background: var(--primary-gradient);
+            color: white;
+            box-shadow: 0 4px 12px rgba(109, 91, 255, 0.25);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(109, 91, 255, 0.35);
+        }
+
+        .btn-lg {
+            padding: var(--spacing-lg) var(--spacing-xl);
+            font-size: 1rem;
+        }
+
+        /* Premium Forms */
+        .form-control, .form-select {
+            border: 1px solid var(--border);
+            border-radius: var(--radius-md);
+            padding: var(--spacing-md) var(--spacing-lg);
+            font-size: 0.9375rem;
+            transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+
+        .form-control:focus, .form-select:focus {
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(109, 91, 255, 0.1);
+            outline: none;
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+        }
+        
+        .form-control::placeholder {
+            color: var(--text-muted);
+        }
+
+        .form-label {
+            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.875rem;
+            margin-bottom: var(--spacing-sm);
+        }
+
+        /* Alerts */
+        .alert {
+            border-radius: var(--radius-md);
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-lg);
+            border-left: 4px solid;
+        }
+
+        .alert-danger {
+            background: rgba(239, 68, 68, 0.1);
+            border-left-color: var(--danger);
+            color: #991b1b;
+        }
+
+        .alert-success {
+            background: rgba(16, 185, 129, 0.1);
+            border-left-color: var(--success);
+            color: #065f46;
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid var(--border);
+            border-top: 3px solid var(--primary);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            animation: spin 1s linear infinite;
+            margin: var(--spacing-2xl) auto;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Responsive */
+        @media (max-width: 1200px) {
+            .watchlist-sidebar {
+                transform: translateX(100%);
+            }
+            .main-content {
+                margin-right: 0;
+            }
+        }
+        
+        @media (max-width: 768px) {
+            .sidebar {
+                transform: translateX(-100%);
+            }
+            .main-content {
+                margin-left: 0;
+                margin-right: 0;
+            }
+        }
+
+        /* Premium Scrollbar */
+        .sidebar::-webkit-scrollbar,
+        .watchlist-sidebar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .sidebar::-webkit-scrollbar-thumb,
+        .watchlist-sidebar::-webkit-scrollbar-thumb {
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 3px;
+        }
+        .sidebar::-webkit-scrollbar-thumb:hover,
+        .watchlist-sidebar::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.3);
+        }
+        
+        /* Page Banner - Consistent across all pages */
+        .page-banner {
+            background: var(--primary-gradient);
+            border-radius: var(--radius-lg);
+            padding: var(--spacing-2xl);
+            color: white;
+            text-align: center;
+            box-shadow: var(--shadow-lg);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .page-banner::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            right: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
+            animation: pulse 4s ease-in-out infinite;
+        }
+        
+        .banner-content {
+            position: relative;
+            z-index: 1;
+        }
+        
+        .banner-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: var(--spacing-md);
+            letter-spacing: -0.02em;
+        }
+        
+        .banner-subtitle {
+            font-size: 1.25rem;
+            opacity: 0.95;
+            font-weight: 500;
+        }
+        
+        @media (max-width: 768px) {
+            .banner-title {
+                font-size: 2rem;
+            }
+            .banner-subtitle {
+                font-size: 1.125rem;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Sidebar -->
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">
+                    <!-- Custom Logo: Pulse Line + Candlestick + AI Node -->
+                    <svg viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">
+                        <defs>
+                            <linearGradient id="logoGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+                                <stop offset="0%" style="stop-color:#FF5C93;stop-opacity:1" />
+                                <stop offset="100%" style="stop-color:#6D5BFF;stop-opacity:1" />
+                            </linearGradient>
+                        </defs>
+                        <!-- Pulse Line (AI Signal) -->
+                        <path class="pulse-line" d="M4 14 L8 10 L12 16 L16 8 L20 14 L24 10" stroke="white" stroke-width="2" stroke-linecap="round" fill="none" opacity="0.9"/>
+                        <!-- Candlestick -->
+                        <rect x="10" y="6" width="2" height="6" fill="white" opacity="0.8"/>
+                        <rect x="9" y="12" width="4" height="2" fill="white" opacity="0.8"/>
+                        <!-- AI Node (Central Dot) -->
+                        <circle cx="14" cy="14" r="3" fill="white" opacity="0.9"/>
+                        <circle cx="14" cy="14" r="1.5" fill="url(#logoGradient)"/>
+                    </svg>
+                </div>
+                <div>
+                    <h1 class="brand-name">TradePulse AI</h1>
+                </div>
+            </div>
+
+            <nav class="nav-section">
+                <a href="/home" class="nav-item {% if page == 'home' %}active{% endif %}">
+                    <i class="fas fa-home"></i>
+                    <span>Home</span>
+                </a>
+                <a href="/dashboard" class="nav-item {% if page == 'dashboard' %}active{% endif %}">
+                    <i class="fas fa-tachometer-alt"></i>
+                    <span>Dashboard</span>
+                </a>
+                <a href="/analysis" class="nav-item {% if page == 'analysis' %}active{% endif %}">
+                    <i class="fas fa-chart-bar"></i>
+                    <span>Asset Analysis</span>
+                </a>
+                <a href="/portfolio" class="nav-item {% if page == 'portfolio' %}active{% endif %}">
+                    <i class="fas fa-wallet"></i>
+                    <span>My Portfolio</span>
+                </a>
+            </nav>
+            
+            <nav class="nav-section">
+                <a href="/market-scanner" class="nav-item {% if page == 'market-scanner' %}active{% endif %}">
+                    <i class="fas fa-search"></i>
+                    <span>Market Scanner</span>
+                </a>
+                <a href="/risk-management" class="nav-item {% if page == 'risk-management' %}active{% endif %}">
+                    <i class="fas fa-calculator"></i>
+                    <span>Risk Management</span>
+                </a>
+                <a href="/trade-journal" class="nav-item {% if page == 'trade-journal' %}active{% endif %}">
+                    <i class="fas fa-book"></i>
+                    <span>Trade Journal</span>
+                </a>
+                <a href="/alerts" class="nav-item {% if page == 'alerts' %}active{% endif %}">
+                    <i class="fas fa-bell"></i>
+                    <span>Alerts</span>
+                </a>
+                <a href="/strategy" class="nav-item {% if page == 'strategy' %}active{% endif %}">
+                    <i class="fas fa-cogs"></i>
+                    <span>Strategy Builder</span>
+                </a>
+            </nav>
+            
+            <nav class="nav-section">
+                <a href="/ai-assistant" class="nav-item {% if page == 'ai-assistant' %}active{% endif %}">
+                    <i class="fas fa-robot"></i>
+                    <span>AI Assistant</span>
+                </a>
+                <a href="/help" class="nav-item {% if page == 'help' %}active{% endif %}">
+                    <i class="fas fa-question-circle"></i>
+                    <span>Help & Guide</span>
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <div class="top-header">
+                <h2 class="page-title">{% block page_title %}Stock Analysis{% endblock %}</h2>
+                <div class="header-actions">
+                    <button class="theme-toggle" id="theme-toggle" onclick="toggleTheme()" title="Toggle Dark/Light Mode">
+                        <i class="fas fa-moon" id="theme-icon"></i>
+                        <span id="theme-text">Dark</span>
+                    </button>
+                </div>
+            </div>
+
+            <div class="content-area">
+                <!-- Financial Disclaimer (shown on all pages) -->
+                <div class="alert alert-warning mb-4" style="background: linear-gradient(135deg, rgba(245, 158, 11, 0.1) 0%, rgba(217, 119, 6, 0.1) 100%); border-left: 4px solid #f59e0b; display: none;" id="global-disclaimer">
+                    <strong><i class="fas fa-exclamation-triangle"></i> Important Disclaimer:</strong>
+                    <p style="margin: 0.5rem 0 0 0; font-size: 0.9rem;">
+                        This application provides analysis and recommendations for informational purposes only. 
+                        <strong>This is NOT financial advice.</strong> All trading and investment decisions carry risk. 
+                        Past performance does not guarantee future results. Always conduct your own research and 
+                        consult with a qualified financial advisor before making investment decisions. 
+                        The authors and operators of this application are not responsible for any financial losses.
+                    </p>
+                </div>
+                {% block main_content %}{% endblock %}
+            </div>
+        </main>
+        
+        <!-- Right Sidebar (Watchlist) -->
+        <aside class="watchlist-sidebar">
+            <div class="watchlist-header">
+                <h3 class="watchlist-title">
+                    <i class="fas fa-star"></i> My Watchlist
+                </h3>
+                <button class="watchlist-refresh-btn" onclick="refreshWatchlist()" title="Refresh Watchlist">
+                    <i class="fas fa-sync-alt"></i>
+                </button>
+            </div>
+            <div class="watchlist-content">
+                <div class="watchlist-add-form">
+                    <input type="text" class="watchlist-input" id="watchlist-symbol-sidebar" 
+                           placeholder="Add stock (e.g., CRM)" 
+                           onkeypress="if(event.key === 'Enter') addToWatchlistSidebar()">
+                    <button class="watchlist-btn" onclick="addToWatchlistSidebar()">
+                        <i class="fas fa-plus"></i> Add Stock
+                    </button>
+                </div>
+                <div id="watchlist-items-sidebar">
+                    {% if watchlist %}
+                        {% for stock in watchlist %}
+                        <div class="watchlist-item {% if symbol == stock %}active{% endif %}" 
+                             onclick="analyzeStock('{{ stock }}', 'stock')" 
+                             style="cursor: pointer;">
+                            <span><strong>{{ stock }}</strong></span>
+                            <button class="watchlist-item-remove" 
+                                    onclick="event.stopPropagation(); removeFromWatchlist('{{ stock }}')" 
+                                    title="Remove">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                        {% endfor %}
+                    {% else %}
+                        <div class="watchlist-empty">
+                            <i class="fas fa-star" style="font-size: 2rem; opacity: 0.3; margin-bottom: var(--spacing-md);"></i>
+                            <p>No stocks in watchlist</p>
+                            <p style="font-size: 0.75rem; margin-top: var(--spacing-sm);">Add stocks to track them</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Theme Toggle Functionality
+        function initTheme() {
+            const savedTheme = localStorage.getItem('theme') || 'dark';
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+            } else {
+                document.body.classList.remove('light-mode');
+            }
+            updateThemeIcon(savedTheme);
+        }
+        
+        function toggleTheme() {
+            const isLight = document.body.classList.contains('light-mode');
+            const newTheme = isLight ? 'dark' : 'light';
+            
+            if (newTheme === 'light') {
+                document.body.classList.add('light-mode');
+            } else {
+                document.body.classList.remove('light-mode');
+            }
+            
+            localStorage.setItem('theme', newTheme);
+            updateThemeIcon(newTheme);
+        }
+        
+        function updateThemeIcon(theme) {
+            const icon = document.getElementById('theme-icon');
+            const text = document.getElementById('theme-text');
+            
+            if (icon && text) {
+                if (theme === 'dark') {
+                    icon.className = 'fas fa-moon';
+                    text.textContent = 'Dark';
+                } else {
+                    icon.className = 'fas fa-sun';
+                    text.textContent = 'Light';
+                }
+            }
+        }
+        
+        // Initialize theme on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initTheme();
+        });
+        
+        function scrollToSection(sectionId) {
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                // Update active nav item
+                document.querySelectorAll('.nav-item').forEach(item => item.classList.remove('active'));
+                const clickedItem = event.target.closest('.nav-item');
+                if (clickedItem) clickedItem.classList.add('active');
+            }
+        }
+        
+        // Watchlist Functions
+        function analyzeStock(symbol, assetType = 'stock') {
+            // Navigate to analysis page with proper parameters
+            window.location.href = `/analysis?symbol=${encodeURIComponent(symbol)}&asset_type=${assetType}&period=1y&interval=1d`;
+        }
+        
+        async function addToWatchlistSidebar() {
+            const symbolInput = document.getElementById('watchlist-symbol-sidebar');
+            if (!symbolInput) {
+                console.error('Watchlist input not found');
+                return;
+            }
+            
+            const symbol = symbolInput.value.trim().toUpperCase();
+            
+            if (!symbol) {
+                alert('Please enter a stock symbol');
+                symbolInput.focus();
+                return;
+            }
+            
+            // Find and disable button during request
+            const addForm = symbolInput.closest('.watchlist-add-form');
+            const addButton = addForm ? addForm.querySelector('.watchlist-btn') : null;
+            const originalButtonContent = addButton ? addButton.innerHTML : '';
+            if (addButton) {
+                addButton.disabled = true;
+                addButton.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Adding...';
+            }
+            
+            try {
+                const response = await fetch('/api/watchlist/add', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol: symbol })
+                });
+                
+                const data = await response.json();
+                if (response.ok && (data.success || data.message)) {
+                    symbolInput.value = '';
+                    await refreshWatchlist();
+                    // Show success message briefly
+                    if (addButton) {
+                        addButton.innerHTML = '<i class="fas fa-check"></i>';
+                        setTimeout(() => {
+                            if (addButton) {
+                                addButton.innerHTML = originalButtonContent;
+                                addButton.disabled = false;
+                            }
+                        }, 1000);
+                    }
+                    // Auto-analyze the newly added stock
+                    setTimeout(() => analyzeStock(symbol, 'stock'), 500);
+                } else {
+                    alert(data.error || 'Error adding to watchlist');
+                    if (addButton) {
+                        addButton.innerHTML = originalButtonContent;
+                        addButton.disabled = false;
+                    }
+                    symbolInput.focus();
+                }
+            } catch (error) {
+                alert('Error adding to watchlist: ' + error.message);
+                if (addButton) {
+                    addButton.innerHTML = originalButtonContent;
+                    addButton.disabled = false;
+                }
+                symbolInput.focus();
+            }
+        }
+        
+        async function removeFromWatchlist(symbol) {
+            if (!confirm(`Remove ${symbol} from watchlist?`)) {
+                return;
+            }
+            
+            try {
+                const response = await fetch('/api/watchlist/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ symbol: symbol })
+                });
+                
+                const data = await response.json();
+                if (data.success || data.message) {
+                    refreshWatchlist();
+                } else {
+                    alert(data.error || 'Error removing from watchlist');
+                }
+            } catch (error) {
+                alert('Error removing from watchlist: ' + error.message);
+            }
+        }
+        
+        async function refreshWatchlist() {
+            try {
+                const response = await fetch('/api/watchlist');
+                const data = await response.json();
+                
+                const watchlistDiv = document.getElementById('watchlist-items-sidebar');
+                if (!watchlistDiv) return;
+                
+                const urlParams = new URLSearchParams(window.location.search);
+                const currentSymbol = urlParams.get('symbol') || '';
+                
+                if (data.stocks && data.stocks.length > 0) {
+                    watchlistDiv.innerHTML = data.stocks.map(stock => {
+                        const escapedStock = stock.replace(/'/g, "\\'").replace(/"/g, '&quot;');
+                        return `
+                        <div class="watchlist-item ${currentSymbol === stock ? 'active' : ''}" 
+                             onclick="analyzeStock('${escapedStock}', 'stock')" 
+                             style="cursor: pointer;">
+                            <span><strong>${stock}</strong></span>
+                            <button class="watchlist-item-remove" 
+                                    onclick="event.stopPropagation(); removeFromWatchlist('${escapedStock}')" 
+                                    title="Remove">
+                                <i class="fas fa-times"></i>
+                            </button>
+                        </div>
+                    `;
+                    }).join('');
+                } else {
+                    watchlistDiv.innerHTML = `
+                        <div class="watchlist-empty">
+                            <i class="fas fa-star" style="font-size: 2rem; opacity: 0.3; margin-bottom: var(--spacing-md);"></i>
+                            <p>No stocks in watchlist</p>
+                            <p style="font-size: 0.75rem; margin-top: var(--spacing-sm);">Add stocks to track them</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                // Silent fail
+            }
+        }
+    </script>
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
