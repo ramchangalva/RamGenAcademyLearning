@@ -20,11 +20,11 @@ applications. Components and integrations are illustrative and may change.
 
 ![Draft agent workflow with Slack approvals and MCP tools](./docs/images/agent-human-in-the-loop-flow.png)
 
-### Personal AI Assistant Architecture
+### Personal AI Assistant with MCP Architecture
 
 ![Draft TradePulse AI and Wealth Management personal assistant architecture](./docs/images/personal-ai-assistant-architecture.png)
 
-### Personal AI Assistant Architecture (Updated)
+### Personal AI Assistant with A2A Architecture
 
 ![Updated draft TradePulse AI and Wealth Management personal assistant architecture](./docs/images/personal-ai-assistant-agent-collaboration.png)
 
