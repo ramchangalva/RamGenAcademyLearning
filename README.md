@@ -24,9 +24,9 @@ applications. Components and integrations are illustrative and may change.
 
 ![Draft TradePulse AI and Wealth Management personal assistant architecture](./docs/images/personal-ai-assistant-architecture.png)
 
-### Agent Ecosystems and Orchestration
+### Personal AI Assistant Architecture (Updated)
 
-![Draft architecture showing agent ecosystems, orchestration, integrations, and infrastructure](./docs/images/agentic-ai-architecture-draft.png)
+![Updated draft TradePulse AI and Wealth Management personal assistant architecture](./docs/images/agentic-ai-architecture-draft.png)
 
 When adding a project, create a new top-level directory with a project-specific
 README and keep its source, configuration, and dependencies within that
