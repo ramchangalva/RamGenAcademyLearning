@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block title %}Liabilities - Wealth Management Planner{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>Liabilities</h1>
+        <button class="btn-primary" id="add-liability-btn"><i class="fas fa-plus"></i> Add Liability</button>
+    </div>
+    
+    <div class="liabilities-table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Outstanding Amount (USD)</th>
+                    <th>Outstanding Amount (INR)</th>
+                    <th>Currency</th>
+                    <th>Interest Rate</th>
+                    <th>Due Date</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="liabilities-table-body">
+                <tr>
+                    <td colspan="8" class="empty-state">No liabilities found. Click "Add Liability" to get started.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Liability Modal -->
+<div id="liability-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add Liability</h2>
+            <button class="modal-close">&times;</button>
+        </div>
+        <form id="liability-form" class="modal-form">
+            <div class="form-group">
+                <label for="liability-type">Liability Type *</label>
+                <select id="liability-type" name="liability_type" required>
+                    <option value="home_loan">Home Loan</option>
+                    <option value="personal_loan">Personal Loan</option>
+                    <option value="credit_card">Credit Card</option>
+                    <option value="car_loan">Car Loan</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="liability-name">Name *</label>
+                <input type="text" id="liability-name" name="name" required>
+            </div>
+            
+            <div class="form-group">
+                <label for="liability-description">Description</label>
+                <textarea id="liability-description" name="description" rows="3"></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="liability-amount">Outstanding Amount *</label>
+                    <input type="number" id="liability-amount" name="outstanding_amount" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="liability-currency">Currency *</label>
+                    <select id="liability-currency" name="currency" required>
+                        <option value="USD">USD</option>
+                        <option value="INR">INR</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="liability-interest">Interest Rate (%)</label>
+                    <input type="number" id="liability-interest" name="interest_rate" step="0.01">
+                </div>
+                
+                <div class="form-group">
+                    <label for="liability-due-date">Due Date</label>
+                    <input type="date" id="liability-due-date" name="due_date">
+                </div>
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary modal-cancel">Cancel</button>
+                <button type="submit" class="btn-primary">Save Liability</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/liabilities.js"></script>
+{% endblock %}

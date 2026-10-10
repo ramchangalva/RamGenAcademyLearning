@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+
+{% block title %}Assets - Wealth Management Planner{% endblock %}
+
+{% block content %}
+<div class="page-container">
+    <div class="page-header">
+        <h1>Assets</h1>
+        <button class="btn-primary" id="add-asset-btn"><i class="fas fa-plus"></i> Add Asset</button>
+    </div>
+    
+    <div class="assets-table-container">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Name</th>
+                    <th>Value (USD)</th>
+                    <th>Value (INR)</th>
+                    <th>Currency</th>
+                    <th>Quantity</th>
+                    <th>Actions</th>
+                </tr>
+            </thead>
+            <tbody id="assets-table-body">
+                <tr>
+                    <td colspan="7" class="empty-state">No assets found. Click "Add Asset" to get started.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Add Asset Modal -->
+<div id="asset-modal" class="modal">
+    <div class="modal-content">
+        <div class="modal-header">
+            <h2>Add Asset</h2>
+            <button class="modal-close">&times;</button>
+        </div>
+        <form id="asset-form" class="modal-form">
+            <div class="form-group">
+                <label for="asset-type">Asset Type *</label>
+                <select id="asset-type" name="asset_type" required>
+                    <option value="mutual_funds">Mutual Funds</option>
+                    <option value="stocks">Stocks</option>
+                    <option value="fixed_income">Fixed Income</option>
+                    <option value="real_estate">Real Estate</option>
+                    <option value="retirement_account">Retirement Account</option>
+                    <option value="small_savings">Small Savings</option>
+                    <option value="cash">Cash</option>
+                    <option value="other">Other</option>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label for="asset-name">Name *</label>
+                <input type="text" id="asset-name" name="name" required>
+            </div>
+            <div class="form-group">
+                <label for="asset-ticker">Ticker (for TradePulse / n8n sync)</label>
+                <input type="text" id="asset-ticker" name="ticker_symbol" maxlength="32" placeholder="e.g. AAPL">
+            </div>
+            
+            <div class="form-group">
+                <label for="asset-description">Description</label>
+                <textarea id="asset-description" name="description" rows="3"></textarea>
+            </div>
+            
+            <div class="form-row">
+                <div class="form-group">
+                    <label for="asset-value">Value (total for this line, in chosen currency) *</label>
+                    <input type="number" id="asset-value" name="value" step="0.01" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="asset-currency">Currency *</label>
+                    <select id="asset-currency" name="currency" required>
+                        <option value="USD">USD</option>
+                        <option value="INR">INR</option>
+                    </select>
+                </div>
+            </div>
+            
+            <div class="form-group">
+                <label for="asset-quantity">Quantity (optional — for reference; totals use Value above)</label>
+                <input type="number" id="asset-quantity" name="quantity" step="0.01">
+            </div>
+            
+            <div class="form-group">
+                <label for="asset-purchase-date">Purchase Date</label>
+                <input type="date" id="asset-purchase-date" name="purchase_date">
+            </div>
+            
+            <div class="modal-actions">
+                <button type="button" class="btn-secondary modal-cancel">Cancel</button>
+                <button type="submit" class="btn-primary">Save Asset</button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/assets.js"></script>
+{% endblock %}

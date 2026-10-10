@@ -1,0 +1,69 @@
+<svg width="600" height="600" viewBox="0 0 600 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Background -->
+  <circle cx="300" cy="300" r="280" fill="url(#gradient1)" opacity="0.1"/>
+  
+  <!-- Gradient Definitions -->
+  <defs>
+    <linearGradient id="gradient1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#2563eb;stop-opacity:1" />
+      <stop offset="50%" style="stop-color:#1e40af;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#1e3a8a;stop-opacity:1" />
+    </linearGradient>
+    <linearGradient id="gradient2" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f59e0b;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#fbbf24;stop-opacity:1" />
+    </linearGradient>
+  </defs>
+  
+  <!-- Sun/Retirement Icon -->
+  <g transform="translate(300, 200)">
+    <circle cx="0" cy="0" r="60" fill="url(#gradient1)" opacity="0.3"/>
+    <circle cx="0" cy="0" r="40" fill="url(#gradient1)"/>
+    <!-- Sun Rays -->
+    <line x1="0" y1="-80" x2="0" y2="-100" stroke="url(#gradient1)" stroke-width="4" stroke-linecap="round"/>
+    <line x1="57" y1="-57" x2="71" y2="-71" stroke="url(#gradient1)" stroke-width="4" stroke-linecap="round"/>
+    <line x1="80" y1="0" x2="100" y2="0" stroke="url(#gradient1)" stroke-width="4" stroke-linecap="round"/>
+    <line x1="57" y1="57" x2="71" y2="71" stroke="url(#gradient1)" stroke-width="4" stroke-linecap="round"/>
+    <line x1="0" y1="80" x2="0" y2="100" stroke="url(#gradient1)" stroke-width="4" stroke-linecap="round"/>
+    <line x1="-57" y1="57" x2="-71" y2="71" stroke="url(#gradient1)" stroke-width="4" stroke-linecap="round"/>
+    <line x1="-80" y1="0" x2="-100" y2="0" stroke="url(#gradient1)" stroke-width="4" stroke-linecap="round"/>
+    <line x1="-57" y1="-57" x2="-71" y2="-71" stroke="url(#gradient1)" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  
+  <!-- Calendar/Planning -->
+  <g transform="translate(150, 400)">
+    <rect x="0" y="0" width="80" height="100" fill="url(#gradient2)" rx="8"/>
+    <rect x="5" y="5" width="70" height="25" fill="white" opacity="0.9" rx="4"/>
+    <text x="40" y="20" text-anchor="middle" fill="#667eea" font-size="16" font-weight="bold">2026</text>
+    <circle cx="25" cy="50" r="8" fill="white" opacity="0.8"/>
+    <circle cx="55" cy="50" r="8" fill="white" opacity="0.8"/>
+    <circle cx="25" cy="75" r="8" fill="white" opacity="0.8"/>
+    <circle cx="55" cy="75" r="8" fill="white" opacity="0.8"/>
+  </g>
+  
+  <!-- Target/Goal -->
+  <g transform="translate(450, 400)">
+    <circle cx="0" cy="0" r="50" fill="none" stroke="url(#gradient2)" stroke-width="4"/>
+    <circle cx="0" cy="0" r="35" fill="none" stroke="url(#gradient2)" stroke-width="4"/>
+    <circle cx="0" cy="0" r="20" fill="url(#gradient2)"/>
+    <text x="0" y="8" text-anchor="middle" fill="white" font-size="20" font-weight="bold">✓</text>
+  </g>
+  
+  <!-- Growth Path -->
+  <path d="M 100 500 Q 200 450 300 400 T 500 300" stroke="url(#gradient1)" stroke-width="6" fill="none" stroke-linecap="round" stroke-dasharray="10,5" opacity="0.6"/>
+  
+  <!-- People/Success -->
+  <g transform="translate(200, 500)">
+    <circle cx="0" cy="0" r="25" fill="url(#gradient1)"/>
+    <circle cx="-15" cy="-5" r="8" fill="white"/>
+    <circle cx="15" cy="-5" r="8" fill="white"/>
+    <path d="M -10 10 Q 0 15 10 10" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+  
+  <g transform="translate(400, 500)">
+    <circle cx="0" cy="0" r="25" fill="url(#gradient2)"/>
+    <circle cx="-15" cy="-5" r="8" fill="white"/>
+    <circle cx="15" cy="-5" r="8" fill="white"/>
+    <path d="M -10 10 Q 0 15 10 10" stroke="white" stroke-width="3" fill="none" stroke-linecap="round"/>
+  </g>
+</svg>

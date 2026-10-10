@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>Login - Wealth Management Planner</title>
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="/static/css/auth.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    </style>
+</head>
+<body class="login-page">
+    <div class="login-page-wrapper">
+        <!-- Left Side - Illustration and Features -->
+        <div class="login-illustration">
+            <h2>Plan Your Financial Future</h2>
+            <p>Take control of your wealth with comprehensive portfolio management and retirement planning tools.</p>
+            <img src="/static/images/wealth-illustration.svg" alt="Wealth Management" class="illustration-image">
+            <ul class="features-list">
+                <li><i class="fas fa-chart-line"></i> Track your portfolio in real-time</li>
+                <li><i class="fas fa-dollar-sign"></i> Multi-currency portfolio support</li>
+                <li><i class="fas fa-piggy-bank"></i> Retirement planning calculator</li>
+                <li><i class="fas fa-shield-alt"></i> Secure and private</li>
+            </ul>
+        </div>
+        
+        <!-- Right Side - Login Form -->
+        <div class="login-container">
+            <div class="login-box">
+            <div class="login-header">
+                <div class="logo">
+                    <i class="fas fa-chart-line"></i>
+                </div>
+                <h1>Wealth Management Planner</h1>
+                <p>Sign in to manage your portfolio</p>
+            </div>
+            
+            {% if error %}
+            <div class="alert alert-error">
+                {% if error == 'invalid_credentials' %}
+                    Invalid username or password. Please check your credentials and try again.
+                {% elif error == 'inactive_user' %}
+                    Your account is inactive. Please contact support.
+                {% elif error == 'session_expired' %}
+                    Your session has expired. Please login again.
+                {% else %}
+                    An error occurred: {{ error }}. Please try again or contact support.
+                {% endif %}
+            </div>
+            {% endif %}
+            
+            <form method="POST" action="/api/auth/login-form" class="login-form" id="login-form" enctype="application/x-www-form-urlencoded">
+                <div class="form-group">
+                    <label for="username"><i class="fas fa-user"></i> Username</label>
+                    <input type="text" id="username" name="username" required autofocus autocomplete="username" tabindex="1">
+                </div>
+                
+                <div class="form-group">
+                    <label for="password"><i class="fas fa-lock"></i> Password</label>
+                    <input type="password" id="password" name="password" required autocomplete="current-password" tabindex="2">
+                </div>
+                
+                <button type="submit" class="btn btn-primary btn-block" tabindex="3">Sign In</button>
+            </form>
+            
+            <div class="login-footer">
+                <p>Don't have an account? <a href="/register">Create Account</a></p>
+            </div>
+        </div>
+        </div>
+    </div>
+</body>
+</html>

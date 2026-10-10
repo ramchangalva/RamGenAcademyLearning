@@ -1,0 +1,25 @@
+# Single-container SQLite. Requires `.env` with SECRET_KEY (see .env.example).
+#
+#   docker compose -f docker-compose.sqlite.yml up -d --build
+
+services:
+  web:
+    image: ${DOCKER_IMAGE:-wealthplanner:latest}
+    build: .
+    ports:
+      - "${WEB_PORT:-9000}:9000"
+    environment:
+      SECRET_KEY: ${SECRET_KEY:?Set SECRET_KEY in a .env file — see .env.example}
+      DATABASE_URL: sqlite:////data/wealth_management.db
+      WEALTH_SQLITE_DIR: /data
+      ENVIRONMENT: production
+      DEBUG: "false"
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      EXCHANGE_RATE_API_KEY: ${EXCHANGE_RATE_API_KEY:-}
+      TRADING_SYNC_HMAC_SECRET: ${TRADING_SYNC_HMAC_SECRET:-}
+    volumes:
+      - wealth_sqlite:/data
+    restart: unless-stopped
+
+volumes:
+  wealth_sqlite:

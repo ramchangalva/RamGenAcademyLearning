@@ -1,0 +1,75 @@
+{% extends "base.html" %}
+{% block title %}Trading &amp; n8n — Wealth Management Planner{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/api_keys.css">
+{% endblock %}
+
+{% block content %}
+<div class="api-keys-page">
+    <h1>TradePulse &amp; n8n (agent → agent)</h1>
+    <p class="api-keys-intro">
+        Export your <strong>holdings</strong>, <strong>watchlist</strong>, and optional <strong>cash</strong> as one signed JSON bundle.
+        <strong>n8n</strong> pulls or receives this payload, calls your local <strong>TradePulse AI</strong> HTTP APIs per symbol,
+        then posts buy/sell/stop-loss summaries to <strong>Slack</strong>. See <code>integrations/N8N_TRADPULSE_BRIDGE.md</code> in the repo.
+    </p>
+
+    <div class="api-keys-model-section" style="margin-top:0;">
+        <h3>Integration</h3>
+        <div class="api-keys-model-grid">
+            <div style="grid-column: 1 / -1;">
+                <label for="n8n-webhook-url">n8n webhook URL (POST — wealth pushes signed JSON here)</label>
+                <input type="url" id="n8n-webhook-url" placeholder="https://your-n8n.example.com/webhook/wealth-sync" autocomplete="off">
+            </div>
+            <div style="grid-column: 1 / -1;">
+                <label for="tradpulse-base">TradePulse base URL</label>
+                <input type="text" id="tradpulse-base" placeholder="http://127.0.0.1:8888" autocomplete="off">
+            </div>
+        </div>
+        <p class="api-keys-hint">
+            <strong>n8n pull token</strong> (header <code>X-N8N-Token</code> on <code>GET /api/trading/export/n8n</code>):
+            <code id="n8n-pull-token" style="word-break:break-all;">—</code>
+        </p>
+        <button type="button" class="api-key-save" id="btn-save-integration"><i class="fas fa-save"></i> Save integration</button>
+        <button type="button" class="api-keys-clear-all" style="margin-left:12px;background:#64748b;" id="btn-rotate-token">Rotate pull token</button>
+        <button type="button" class="api-key-save" style="margin-left:12px;" id="btn-push-n8n"><i class="fas fa-paper-plane"></i> Push to n8n now</button>
+    </div>
+
+    <div class="api-keys-model-section">
+        <h3>Uninvested cash (optional)</h3>
+        <div class="api-keys-model-grid">
+            <div>
+                <label for="cash-balance">Cash balance</label>
+                <input type="number" id="cash-balance" step="0.01" placeholder="e.g. 5000">
+            </div>
+            <div>
+                <label for="cash-currency">Currency</label>
+                <select id="cash-currency">
+                    <option value="USD">USD</option>
+                    <option value="INR">INR</option>
+                </select>
+            </div>
+        </div>
+        <button type="button" class="api-key-save" id="btn-save-cash"><i class="fas fa-save"></i> Save cash</button>
+    </div>
+
+    <div class="api-keys-model-section">
+        <h3>Watchlist (tickers for TradePulse)</h3>
+        <div class="api-keys-model-grid" style="max-width:100%;">
+            <div>
+                <label for="wl-symbol">Symbol</label>
+                <input type="text" id="wl-symbol" placeholder="AAPL" maxlength="32">
+            </div>
+            <div>
+                <label for="wl-notes">Notes (optional)</label>
+                <input type="text" id="wl-notes" placeholder="optional">
+            </div>
+        </div>
+        <button type="button" class="api-key-save" id="btn-add-wl"><i class="fas fa-plus"></i> Add</button>
+        <ul id="wl-list" style="margin-top:16px; list-style:none; padding:0;"></ul>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/trading_n8n.js"></script>
+{% endblock %}

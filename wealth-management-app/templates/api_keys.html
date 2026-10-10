@@ -1,0 +1,129 @@
+{% extends "base.html" %}
+{% block title %}API keys — Wealth Management Planner{% endblock %}
+{% block extra_css %}
+<link rel="stylesheet" href="/static/css/api_keys.css">
+{% endblock %}
+
+{% block content %}
+<div class="api-keys-page">
+    <h1>AI &amp; API configuration</h1>
+    <p class="api-keys-intro">
+        Store provider keys encrypted on the server. Keys are never shown again after saving.
+        The wealth advisor uses <strong>OpenAI-compatible</strong> APIs (OpenAI, or a custom base URL). Other providers can be saved for future features.
+    </p>
+
+    <div class="api-keys-panel">
+        <div class="api-keys-panel-header" id="api-keys-collapse-trigger" role="button" tabindex="0" aria-expanded="true" aria-controls="api-keys-panel-body">
+            <h2><i class="fas fa-key" aria-hidden="true"></i> API Key Configuration</h2>
+            <button type="button" class="api-keys-toggle" id="api-keys-toggle" aria-label="Collapse section">
+                <span id="api-keys-toggle-label">Hide</span>
+                <i class="fas fa-chevron-up" id="api-keys-chevron" aria-hidden="true"></i>
+            </button>
+        </div>
+        <div class="api-keys-panel-body" id="api-keys-panel-body">
+            <div class="api-keys-grid">
+                <div class="api-key-card" data-provider="openai">
+                    <label>
+                        OpenAI API Key
+                        <span class="api-key-badge not-configured" data-badge>Not configured</span>
+                    </label>
+                    <div class="api-key-row">
+                        <input type="password" class="api-key-input" autocomplete="off" placeholder="Enter OpenAI API key" aria-label="OpenAI API key">
+                        <button type="button" class="api-key-eye" title="Show / hide" aria-label="Show or hide key"><i class="fas fa-eye"></i></button>
+                        <button type="button" class="api-key-save"><i class="fas fa-save"></i> Save</button>
+                    </div>
+                    <div class="api-key-base-url">
+                        <label for="openai-base-url">Base URL (optional)</label>
+                        <input type="text" id="openai-base-url" placeholder="https://api.openai.com/v1" autocomplete="off">
+                    </div>
+                </div>
+
+                <div class="api-key-card" data-provider="anthropic">
+                    <label>
+                        Anthropic API Key
+                        <span class="api-key-badge not-configured" data-badge>Not configured</span>
+                    </label>
+                    <div class="api-key-row">
+                        <input type="password" class="api-key-input" autocomplete="off" placeholder="Enter Anthropic API key" aria-label="Anthropic API key">
+                        <button type="button" class="api-key-eye" title="Show / hide" aria-label="Show or hide key"><i class="fas fa-eye"></i></button>
+                        <button type="button" class="api-key-save"><i class="fas fa-save"></i> Save</button>
+                    </div>
+                </div>
+
+                <div class="api-key-card" data-provider="google">
+                    <label>
+                        Google API Key
+                        <span class="api-key-badge not-configured" data-badge>Not configured</span>
+                    </label>
+                    <div class="api-key-row">
+                        <input type="password" class="api-key-input" autocomplete="off" placeholder="Enter Google API key" aria-label="Google API key">
+                        <button type="button" class="api-key-eye" title="Show / hide" aria-label="Show or hide key"><i class="fas fa-eye"></i></button>
+                        <button type="button" class="api-key-save"><i class="fas fa-save"></i> Save</button>
+                    </div>
+                </div>
+
+                <div class="api-key-card" data-provider="cohere">
+                    <label>
+                        Cohere API Key
+                        <span class="api-key-badge not-configured" data-badge>Not configured</span>
+                    </label>
+                    <div class="api-key-row">
+                        <input type="password" class="api-key-input" autocomplete="off" placeholder="Enter Cohere API key" aria-label="Cohere API key">
+                        <button type="button" class="api-key-eye" title="Show / hide" aria-label="Show or hide key"><i class="fas fa-eye"></i></button>
+                        <button type="button" class="api-key-save"><i class="fas fa-save"></i> Save</button>
+                    </div>
+                </div>
+
+                <div class="api-key-card" data-provider="huggingface">
+                    <label>
+                        Hugging Face API Key
+                        <span class="api-key-badge not-configured" data-badge>Not configured</span>
+                    </label>
+                    <div class="api-key-row">
+                        <input type="password" class="api-key-input" autocomplete="off" placeholder="Enter Hugging Face API key" aria-label="Hugging Face API key">
+                        <button type="button" class="api-key-eye" title="Show / hide" aria-label="Show or hide key"><i class="fas fa-eye"></i></button>
+                        <button type="button" class="api-key-save"><i class="fas fa-save"></i> Save</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="api-keys-actions">
+                <button type="button" class="api-keys-clear-all" id="api-keys-clear-all">Clear all API keys</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="api-keys-model-section">
+        <h3>Assistant provider &amp; model</h3>
+        <div class="api-keys-model-grid">
+            <div>
+                <label for="active-provider">AI provider</label>
+                <select id="active-provider">
+                    <option value="openai">OpenAI</option>
+                    <option value="anthropic">Anthropic</option>
+                    <option value="google">Google</option>
+                    <option value="cohere">Cohere</option>
+                    <option value="huggingface">Hugging Face</option>
+                </select>
+            </div>
+            <div>
+                <label for="active-model">Model</label>
+                <input type="text" id="active-model" list="openai-model-suggestions" placeholder="e.g. gpt-4o-mini" autocomplete="off">
+                <datalist id="openai-model-suggestions">
+                    <option value="gpt-4o-mini"></option>
+                    <option value="gpt-4o"></option>
+                    <option value="gpt-4-turbo"></option>
+                    <option value="o1-mini"></option>
+                    <option value="o1"></option>
+                </datalist>
+            </div>
+        </div>
+        <p class="api-keys-hint">Changing provider to a non-OpenAI option disables the in-app advisor until that backend is supported. OpenAI + compatible gateways work today.</p>
+        <button type="button" class="api-key-save" id="api-keys-save-preferences" style="margin-top: 16px;"><i class="fas fa-check"></i> Save preferences</button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/api_keys.js"></script>
+{% endblock %}

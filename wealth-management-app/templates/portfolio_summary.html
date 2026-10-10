@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+
+{% block title %}Portfolio Summary - Wealth Management Planner{% endblock %}
+
+{% block content %}
+<div class="portfolio-layout">
+    <!-- Left Sidebar -->
+    <aside class="sidebar">
+        <a href="/" class="back-link"><i class="fas fa-arrow-left"></i> ADVISOR HOME</a>
+        
+        <div class="net-worth-card">
+            <h2>NET WORTH</h2>
+            <div class="net-worth-value" id="net-worth-display">$0</div>
+            
+            <div class="summary-stats">
+                <div class="stat-item">
+                    <span class="stat-label">ASSETS</span>
+                    <span class="stat-value" id="assets-total">$0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">LIABILITIES</span>
+                    <span class="stat-value" id="liabilities-total">$0</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-label">INSURANCE</span>
+                    <span class="stat-value" id="insurance-total">$0</span>
+                </div>
+            </div>
+            
+            <div class="asset-breakdown">
+                <h3>Asset Breakdown</h3>
+                <div id="asset-list">
+                    <div class="asset-item">
+                        <span class="asset-name">Mutual funds</span>
+                        <span class="asset-value">$0</span>
+                    </div>
+                    <div class="asset-item">
+                        <span class="asset-name">Stocks</span>
+                        <span class="asset-value">$0</span>
+                    </div>
+                    <div class="asset-item">
+                        <span class="asset-name">Fixed Income</span>
+                        <span class="asset-value">$0</span>
+                    </div>
+                    <div class="asset-item">
+                        <span class="asset-name">Real estate</span>
+                        <span class="asset-value">$0</span>
+                    </div>
+                    <div class="asset-item">
+                        <span class="asset-name">Retirement a/c</span>
+                        <span class="asset-value">$0</span>
+                    </div>
+                    <div class="asset-item">
+                        <span class="asset-name">Small savings</span>
+                        <span class="asset-value">$0</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </aside>
+    
+    <!-- Main Content Area -->
+    <main class="portfolio-main">
+        <div class="page-header">
+            <h1>Portfolio summary</h1>
+            <div class="page-actions">
+                <span class="date-display">As on {{ current_date }}</span>
+                <button class="icon-btn" title="Download"><i class="fas fa-download"></i></button>
+            </div>
+        </div>
+        
+        <div class="portfolio-grid">
+            <!-- MF Portfolio Growth -->
+            <div class="card">
+                <h2>MF Portfolio growth</h2>
+                <div class="chart-placeholder" id="mf-growth-chart">
+                    <i class="fas fa-chart-line"></i>
+                    <p>Not enough data to display.</p>
+                    <p class="placeholder-text">Before we can create any charts, we'll first need to get some data in here.</p>
+                    <a href="/portfolio/assets" class="btn-link">Add data</a>
+                </div>
+            </div>
+            
+            <!-- Asset Allocation -->
+            <div class="card">
+                <h2>Asset allocation</h2>
+                <div class="chart-container">
+                    <canvas id="asset-allocation-chart"></canvas>
+                </div>
+            </div>
+            
+            <!-- Cash Flow -->
+            <div class="card">
+                <div class="card-header">
+                    <h2>Cash flow</h2>
+                    <i class="fas fa-info-circle" title="Cash flow information"></i>
+                </div>
+                <div class="card-actions">
+                    <button class="btn-secondary"><i class="fas fa-filter"></i> FILTERS</button>
+                    <button class="icon-btn" title="Download"><i class="fas fa-download"></i></button>
+                </div>
+                <div class="cash-flow-content">
+                    <p class="placeholder-text">Cash flow data will be displayed here</p>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- Right Sidebar - Market Summary -->
+    <aside class="market-sidebar">
+        <div class="market-card">
+            <div class="market-header">
+                <h2>Market summary</h2>
+                <span class="date-display" id="market-date-display" title="Last quote date when available">{{ current_date }}</span>
+            </div>
+            <p class="market-source-hint">Major global indices (indicative, delayed)</p>
+            
+            <div class="market-tabs">
+                <button class="tab-btn active" data-tab="equities">Equities</button>
+                <button class="tab-btn" data-tab="debt">Debt</button>
+                <button class="tab-btn" data-tab="cm">C&M</button>
+            </div>
+            
+            <div class="market-content" id="market-content">
+                <p class="market-loading">Loading market data…</p>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<div class="currency-selector">
+    <label>Display Currency:</label>
+        <select id="currency-selector">
+        <option value="USD" selected>USD ($)</option>
+        <option value="INR">INR (₹)</option>
+    </select>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="/static/js/portfolio_summary.js"></script>
+{% endblock %}

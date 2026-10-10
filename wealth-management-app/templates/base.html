@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, user-scalable=yes">
+    <title>{% block title %}Wealth Management Planner{% endblock %}</title>
+    <link rel="icon" href="/static/favicon.svg" type="image/svg+xml">
+    <link rel="stylesheet" href="/static/css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <div class="app-container">
+        <!-- Top Navigation -->
+        <nav class="top-nav">
+            <div class="nav-container">
+                <div class="nav-links">
+                    <a href="/portfolio/summary" class="nav-link {% if request.url.path.startswith('/portfolio') %}active{% endif %}">PORTFOLIO</a>
+                    <a href="/plan" class="nav-link {% if request.url.path.startswith('/plan') %}active{% endif %}">PLAN</a>
+                    <a href="/settings/api-keys" class="nav-link {% if request.url.path.startswith('/settings') and request.url.path != '/settings/trading-n8n' %}active{% endif %}">SETTINGS</a>
+                    <a href="/settings/trading-n8n" class="nav-link {% if request.url.path == '/settings/trading-n8n' %}active{% endif %}" title="n8n + TradePulse">TRADE SYNC</a>
+                    <a href="#" class="nav-link">ACTIVITY</a>
+                    <a href="#" class="nav-link">TRANSACT</a>
+                </div>
+                <div class="nav-user">
+                    <span class="user-badge">{% if user %}{{ user.username|upper }}{% else %}—{% endif %}</span>
+                    <a href="/logout" class="logout-btn"><i class="fas fa-sign-out-alt"></i></a>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Sub Navigation (for Portfolio) -->
+        {% if request.url.path.startswith('/portfolio') %}
+        <nav class="sub-nav">
+            <div class="sub-nav-container">
+                <a href="/portfolio/summary" class="sub-nav-link {% if request.url.path == '/portfolio/summary' %}active{% endif %}">SUMMARY</a>
+                <a href="/portfolio/assets" class="sub-nav-link {% if request.url.path == '/portfolio/assets' %}active{% endif %}">ASSETS</a>
+                <a href="/portfolio/liabilities" class="sub-nav-link {% if request.url.path == '/portfolio/liabilities' %}active{% endif %}">LIABILITIES</a>
+                <a href="#" class="sub-nav-link">INSURANCE</a>
+                <a href="#" class="sub-nav-link">ANALYTICS</a>
+            </div>
+        </nav>
+        {% endif %}
+
+        <!-- Main Content -->
+        <div class="main-content">
+            {% block content %}{% endblock %}
+        </div>
+    </div>
+
+    {% if user %}
+    <button type="button" id="advisor-fab" class="advisor-fab" title="Wealth advisor" aria-label="Open wealth advisor chat">
+        <i class="fas fa-robot"></i>
+    </button>
+    <div id="advisor-panel" class="advisor-panel" role="dialog" aria-label="Wealth advisor chat">
+        <div class="advisor-panel-header">
+            <span>Wealth advisor</span>
+            <button type="button" id="advisor-close" aria-label="Close">&times;</button>
+        </div>
+        <p class="advisor-disclaimer">Educational assistant only—not licensed financial, tax, or legal advice. Uses your portfolio data from this app when you ask.</p>
+        <p id="advisor-setup-banner" class="advisor-setup-banner" hidden>
+            To start chatting, add an <strong>OpenAI</strong> API key under
+            <a href="/settings/api-keys">Settings → API keys</a>, or ask your admin to set <code>OPENAI_API_KEY</code> on the server.
+        </p>
+        <div id="advisor-messages" class="advisor-messages"></div>
+        <div id="advisor-drafts" class="advisor-drafts" hidden></div>
+        <div id="advisor-typing" class="advisor-typing">Thinking…</div>
+        <div class="advisor-input-row">
+            <textarea id="advisor-input" placeholder="Ask about your portfolio, allocation, or goals…" rows="2" maxlength="4000"></textarea>
+            <button type="button" class="send" id="advisor-send">Send</button>
+        </div>
+    </div>
+    {% endif %}
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <script src="/static/js/main.js"></script>
+    {% if user %}
+    <script src="/static/js/advisor.js"></script>
+    {% endif %}
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
