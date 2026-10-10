@@ -26,7 +26,7 @@ applications. Components and integrations are illustrative and may change.
 
 ### Personal AI Assistant Architecture (Updated)
 
-![Updated draft TradePulse AI and Wealth Management personal assistant architecture](./docs/images/agentic-ai-architecture-draft.png)
+![Updated draft TradePulse AI and Wealth Management personal assistant architecture](./docs/images/personal-ai-assistant-agent-collaboration.png)
 
 When adding a project, create a new top-level directory with a project-specific
 README and keep its source, configuration, and dependencies within that
